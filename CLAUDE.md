@@ -1,9 +1,9 @@
-# CLAUDE.md
+# posttrainer
 
 This project is in the planning/brainstorming phase. No implementation yet.
 
 ## What this project is
-An autonomous post-training (RL/SFT) harness inspired by Karpathy's autoresearch. The agent runs experiments in a loop indefinitely, iterating on reward functions, hyperparameters, curriculum, and data selection. Method-agnostic, supporting Tinker API and Prime Intellect hosted training.
+An autonomous RL post-training harness inspired by Karpathy's autoresearch. The agent runs GRPO experiments in a loop indefinitely, iterating on reward functions, hyperparameters, curriculum, and data selection. Backend-agnostic, supporting Tinker API and Prime Intellect hosted training.
 
 ## Context
 All research and analysis is stored in the project memory files. Read them before discussing:
