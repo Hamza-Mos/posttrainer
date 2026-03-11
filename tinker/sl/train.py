@@ -5,7 +5,7 @@ Autonomous post-training harness. The agent modifies data.jsonl and the
 hyperparameters below. Based on tinker-cookbook's sl_loop.py pattern
 (https://github.com/thinking-machines-lab/tinker-cookbook).
 
-Run:   python train.py 2>&1 | tee run.log
+Run:   python train.py > run.log 2>&1
 Check: grep '^eval_loss:' run.log
 
 Dependencies: pip install tinker torch transformers
@@ -16,8 +16,6 @@ import logging
 import random
 import sys
 import time
-from concurrent.futures import Future
-
 import tinker
 import torch
 from tinker import types

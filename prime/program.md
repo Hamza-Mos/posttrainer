@@ -58,7 +58,7 @@ CLAUDE.md                 # Claude Code instructions
 | `environments/<env_name>/pyproject.toml` | Package metadata | YES |
 | `configs/rl/<config>.toml` | Training configuration | YES |
 | `notes.md` | Your lab notebook | YES — update after every experiment |
-| `results.tsv` | Experiment log | YES — append after every experiment |
+| `results.tsv` | Experiment log | YES — append, do NOT commit |
 | `../rules.md` | Hard rules | NO — read before every experiment |
 
 ### Before Your First Experiment
@@ -107,7 +107,9 @@ LOOP FOREVER:
   NEVER STOP
 ```
 
-### Pre-Training Validation
+**NEVER STOP**: Once the loop begins, do NOT pause to ask the human if you should continue. Do NOT ask "should I keep going?" or "is this a good stopping point?". The human might be asleep, or away from the computer and expects you to continue working *indefinitely* until manually stopped. You are autonomous. If you run out of ideas, think harder — read papers, redesign the environment, try different reward structures. The loop runs until the human interrupts you, period.
+
+### Pre-Run Validation
 Before every `prime rl run`, validate locally:
 ```bash
 # Quick eval to check env works and baseline reward
@@ -303,7 +305,7 @@ class MyStatefulEnv(vf.StatefulToolEnv):
         Returns:
             Query results as formatted text
         """
-        state["queries_made"] += 1
+        self.state["queries_made"] += 1
         return await session.execute(sql)
 
 def load_environment(split="train", **kwargs):

@@ -5,7 +5,7 @@ Autonomous post-training harness. The agent modifies reward.py, prompts.jsonl,
 eval_prompts.jsonl, and the hyperparameters below. Based on tinker-cookbook's
 rl_loop.py pattern (https://github.com/thinking-machines-lab/tinker-cookbook).
 
-Run:   python train.py 2>&1 | tee run.log
+Run:   python train.py > run.log 2>&1
 Check: grep '^eval_reward_mean:' run.log
 
 Variable naming convention (from tinker-cookbook CONTRIBUTING.md):

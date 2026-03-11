@@ -33,7 +33,7 @@ export TINKER_API_KEY="your-key-here"
 | `train.py` | SFT training loop (Tinker SDK) | YES — hyperparameters |
 | `data.jsonl` | Training data (prompt/response pairs) | YES — highest impact lever |
 | `notes.md` | Your lab notebook | YES — update after every experiment |
-| `results.tsv` | Experiment log | YES — append after every experiment |
+| `results.tsv` | Experiment log | YES — append, do NOT commit |
 | `../rules.md` | Hard rules | NO — read before every experiment |
 
 ### Before Your First Experiment
@@ -65,12 +65,13 @@ LOOP FOREVER:
      - If hyperparams changed: verify within safe ranges
   6. git commit -m "exp: <description of what you changed and why>"
   7. Run the experiment:
-     python train.py 2>&1 | tee run.log
+     python train.py > run.log 2>&1
+     (redirect everything — do NOT use tee or let output flood your context)
   8. Extract results:
      grep '^eval_loss:' run.log
   9. Read the SAMPLE DATA section in run.log (verify data quality)
   10. Record in results.tsv:
-      <commit> <eval_loss> <train_loss> <keep|discard|crash> <description>
+      <commit> <eval_loss> <keep|discard|crash> <description>
   11. Decision:
       - If eval_loss DECREASED (improved) → KEEP
       - If eval_loss INCREASED or didn't improve → DISCARD: git reset --hard HEAD~1
@@ -78,6 +79,8 @@ LOOP FOREVER:
   12. Update notes.md with observations and next steps
   NEVER STOP
 ```
+
+**NEVER STOP**: Once the loop begins, do NOT pause to ask the human if you should continue. Do NOT ask "should I keep going?" or "is this a good stopping point?". The human might be asleep, or away from the computer and expects you to continue working *indefinitely* until manually stopped. You are autonomous. If you run out of ideas, think harder — read papers, find better data, try combining approaches. The loop runs until the human interrupts you, period.
 
 ---
 
@@ -135,6 +138,7 @@ For SFT, data quality is EVERYTHING. A small dataset of high-quality examples be
 | `BATCH_SIZE` | `128` | Examples per batch |
 | `MAX_LENGTH` | `4096` | Max tokens (prompt + response). Task-specific. |
 | `N_EPOCHS` | `1` | Passes through data. 1-3 typical for LoRA SFT. |
+| `SAVE_EVERY` | `20` | Checkpoint every N batches. 0 = disabled. |
 | `EVAL_SPLIT` | `0.1` | Fraction held out for eval |
 | `SYSTEM_PROMPT` | `None` | Optional system prompt prepended to all examples |
 
@@ -178,8 +182,8 @@ optim_result = optim_future.result()
 
 ### Checkpointing
 ```python
-state_path = training_client.save_state()           # Full state (resume training)
-sampler_path = training_client.save_weights_for_sampler()  # Weights only (inference)
+state_path = training_client.save_state(name="checkpoint").result()           # Full state (resume training)
+sampler_path = training_client.save_weights_for_sampler(name="final").result()  # Weights only (inference)
 training_client = service_client.create_training_client_from_state_with_optimizer(state_path)
 ```
 
@@ -204,7 +208,7 @@ Same as RL — see tinker/rl/program.md Section 5 or https://tinker-docs.thinkin
 
 ### When Training Stalls
 1. **Check data quality** — read examples manually. Are they actually good?
-2. **Check for overfitting** — is eval_loss rising while train_loss falls?
+2. **Check for overfitting** — is eval_loss rising across epochs?
 3. **Check data diversity** — are examples too similar? Too narrow?
 4. **Search for better data sources** — is there a higher quality dataset for this task?
 5. **Consider switching to RL** — if you have a verifiable reward function, GRPO may work better than SFT. See `tinker/rl/` for the RL setup.

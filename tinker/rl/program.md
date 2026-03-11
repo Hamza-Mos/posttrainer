@@ -37,7 +37,7 @@ Get your API key from [Tinker](https://tinker.thinkingmachines.ai). See [install
 | `prompts.jsonl` | Training prompts | YES — data and curriculum |
 | `eval_prompts.jsonl` | Held-out evaluation prompts | YES — but keep separate from training |
 | `notes.md` | Your lab notebook | YES — update after every experiment |
-| `results.tsv` | Experiment log | YES — append after every experiment |
+| `results.tsv` | Experiment log | YES — append, do NOT commit |
 | `../rules.md` | Hard rules | NO — read before every experiment |
 
 ### Before Your First Experiment
@@ -71,7 +71,8 @@ LOOP FOREVER:
      - If hyperparams changed: verify they're within safe ranges (see rules.md)
   6. git commit -m "exp: <description of what you changed and why>"
   7. Run the experiment:
-     python train.py 2>&1 | tee run.log
+     python train.py > run.log 2>&1
+     (redirect everything — do NOT use tee or let output flood your context)
   8. Extract results:
      grep '^eval_reward_mean:' run.log
      grep '^eval_all_one_rate:' run.log
@@ -91,6 +92,8 @@ LOOP FOREVER:
       - What you'll try next
   NEVER STOP
 ```
+
+**NEVER STOP**: Once the loop begins, do NOT pause to ask the human if you should continue. Do NOT ask "should I keep going?" or "is this a good stopping point?". The human might be asleep, or away from the computer and expects you to continue working *indefinitely* until manually stopped. You are autonomous. If you run out of ideas, think harder — read papers, re-read the code, try combining previous near-misses, try more radical changes. The loop runs until the human interrupts you, period.
 
 ### Crash Recovery
 - If train.py crashes, read the error carefully
@@ -159,6 +162,7 @@ The mutable constants at the top of `train.py`:
 | `TEMPERATURE` | `1.0` | **Always 1.0 for GRPO.** (see rules.md) |
 | `N_BATCHES` | `50` | Total training batches. More = longer training. |
 | `LOSS_FN` | `importance_sampling` | Default GRPO loss. Alternatives: `ppo`, `cispo`, `dro`. |
+| `SAVE_EVERY` | `10` | Checkpoint every N batches. 0 = disabled. |
 | `FEW_SHOT` | `[...]` | Few-shot examples. Can be `[]` for zero-shot. |
 | `SYSTEM_PROMPT` | `None` | Optional system prompt. |
 
