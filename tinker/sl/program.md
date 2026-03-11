@@ -36,6 +36,16 @@ export TINKER_API_KEY="your-key-here"
 | `results.tsv` | Experiment log | YES — append, do NOT commit |
 | `../rules.md` | Hard rules | NO — read before every experiment |
 
+**What you CAN modify:**
+- `data.jsonl` — training data (highest impact lever)
+- `train.py` — hyperparameters at the top of the file (MODEL, BATCH_SIZE, MAX_LENGTH, etc.)
+
+**What you CANNOT modify:**
+- `program.md` — read-only. The human edits this, not you.
+- `../rules.md` — read-only. Hard constraints from 70+ experiments.
+- The Tinker SDK internals. You call the API, you don't modify it.
+- Do not install new packages. Only use tinker, torch, and transformers.
+
 ### Before Your First Experiment
 1. **Create an experiment branch** — NEVER work on main/master directly:
    ```bash

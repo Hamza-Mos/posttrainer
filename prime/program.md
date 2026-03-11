@@ -61,6 +61,16 @@ CLAUDE.md                 # Claude Code instructions
 | `results.tsv` | Experiment log | YES — append, do NOT commit |
 | `../rules.md` | Hard rules | NO — read before every experiment |
 
+**What you CAN modify:**
+- `environments/<env_name>/<env_name>.py` — environment implementation and reward functions (highest impact)
+- `environments/<env_name>/pyproject.toml` — package metadata and dependencies
+- `configs/rl/<config>.toml` — training configuration and hyperparameters
+
+**What you CANNOT modify:**
+- `program.md` — read-only. The human edits this, not you.
+- `../rules.md` — read-only. Hard constraints from 70+ experiments.
+- The Prime CLI or verifiers library internals. You use them, you don't modify them.
+
 ### Before Your First Experiment
 1. **Create an experiment branch** — NEVER work on main/master directly:
    ```bash

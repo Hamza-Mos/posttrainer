@@ -40,6 +40,17 @@ Get your API key from [Tinker](https://tinker.thinkingmachines.ai). See [install
 | `results.tsv` | Experiment log | YES — append, do NOT commit |
 | `../rules.md` | Hard rules | NO — read before every experiment |
 
+**What you CAN modify:**
+- `reward.py` — the reward function (highest impact lever)
+- `prompts.jsonl` / `eval_prompts.jsonl` — training and eval data
+- `train.py` — hyperparameters at the top of the file (MODEL, BATCH_SIZE, MAX_TOKENS, etc.)
+
+**What you CANNOT modify:**
+- `program.md` — read-only. The human edits this, not you.
+- `../rules.md` — read-only. Hard constraints from 70+ experiments.
+- The Tinker SDK internals. You call the API, you don't modify it.
+- Do not install new packages. Only use tinker, torch, and transformers.
+
 ### Before Your First Experiment
 1. **Create an experiment branch** — NEVER work on main/master directly:
    ```bash
