@@ -14,3 +14,6 @@ prime/configs/
 prime/environments/
 prime/pyproject.toml
 prime/uv.lock
+
+# Pretrain generated files
+pretrain/uv.lock

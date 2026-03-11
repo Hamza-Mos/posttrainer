@@ -24,7 +24,7 @@ These rules are derived from 70+ real training experiments (51 salesbench observ
 
 6. **Sequence length is THE bottleneck.** Scales super-linearly. 42k seq_len with 8 items took 4+ hours vs 14.5k seq_len with 2 items taking 25 min. Keep prompts and responses as short as possible. Summarize aggressively.
 
-7. **Oversampling factor >= 2.0.** Buffers against ModelError bursts AND provides faster step completion. 2.5 proven effective with batch_size=128 on Prime.
+7. **Oversampling factor >= 2.0 (Prime only).** Buffers against ModelError bursts AND provides faster step completion. 2.5 proven effective with batch_size=128 on Prime.
 
 ## Experiment Discipline
 
