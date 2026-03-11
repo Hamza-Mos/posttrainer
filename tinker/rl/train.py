@@ -52,7 +52,9 @@ FEW_SHOT = [
 ]
 
 # System prompt (set to None to skip)
-SYSTEM_PROMPT = None
+# NOTE: For Qwen3 models, set this to disable thinking mode.
+# Without it, the model wastes tokens on <think> tags.
+SYSTEM_PROMPT = "Respond directly without any thinking or reasoning process."
 
 # ============================================================================
 # FIXED — Do not modify unless you know what you're doing
@@ -215,7 +217,7 @@ def main():
 
         # Checkpoint
         if SAVE_EVERY > 0 and batch_idx > 0 and batch_idx % SAVE_EVERY == 0:
-            state_path = training_client.save_state()
+            state_path = training_client.save_state(name=f"batch_{batch_idx:06d}").result()
             logger.info(f"Checkpoint saved: {state_path}")
 
         # Get batch (wrap around if needed)
@@ -369,8 +371,8 @@ def main():
         print("---")
 
     # Save final checkpoint
-    state_path = training_client.save_state()
-    sampler_path = training_client.save_weights_for_sampler()
+    state_path = training_client.save_state(name="final").result()
+    sampler_path = training_client.save_weights_for_sampler(name="final").result()
     logger.info(f"Final checkpoint (state): {state_path}")
     logger.info(f"Final checkpoint (sampler): {sampler_path}")
 
