@@ -1,0 +1,10 @@
+{"prompt": "What is 67 + 48? Answer with just the number.", "ground_truth": "115"}
+{"prompt": "What is 31 + 92? Answer with just the number.", "ground_truth": "123"}
+{"prompt": "What is 84 + 57? Answer with just the number.", "ground_truth": "141"}
+{"prompt": "What is 25 + 76? Answer with just the number.", "ground_truth": "101"}
+{"prompt": "What is 93 + 18? Answer with just the number.", "ground_truth": "111"}
+{"prompt": "What is 42 + 59? Answer with just the number.", "ground_truth": "101"}
+{"prompt": "What is 78 + 33? Answer with just the number.", "ground_truth": "111"}
+{"prompt": "What is 55 + 46? Answer with just the number.", "ground_truth": "101"}
+{"prompt": "What is 17 + 86? Answer with just the number.", "ground_truth": "103"}
+{"prompt": "What is 69 + 74? Answer with just the number.", "ground_truth": "143"}

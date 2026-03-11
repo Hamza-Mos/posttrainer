@@ -1,0 +1,3 @@
+{"prompt": "Explain what a neural network is in one sentence.", "response": "A neural network is a computational model inspired by the brain that learns patterns from data by adjusting connection weights across layers of interconnected nodes."}
+{"prompt": "What is the capital of France?", "response": "Paris."}
+{"prompt": "Write a Python function that checks if a number is prime.", "response": "def is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True"}
