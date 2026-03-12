@@ -1,57 +1,32 @@
 #!/usr/bin/env python3
-"""lab — CLI for structured experiment tracking.
+"""lab — structured experiment tracking for autonomous research.
 
-Agent-agnostic research memory. Any coding agent that can run bash can use this.
-Wraps a SQLite database exposed as simple CLI subcommands.
+5 commands. One SQLite database. No dependencies beyond stdlib.
 
-Adapted from Dennis Lee's autoresearch lab CLI for multi-leaf posttrainer.
-DB lives at the repo root (data/experiments.db), campaign.yaml is read from CWD.
-
-Usage:
-    ./lab context                    # full research history
-    ./lab status                     # budget and campaign health
-    ./lab hypothesis "title" ...     # register what you're testing
-    ./lab experiment H_ID ...        # log what you ran
-    ./lab result EXP_ID ...          # log what happened
-    ./lab insight "content" ...      # log a learning
-    ./lab direction "title" ...      # register a research thread
-    ./lab synthesize ...             # reflect across experiments
-    ./lab validate H_ID --cost 1.5   # pre-run readiness check
-    ./lab best                       # best result so far
-    ./lab failures                   # failed approaches (don't repeat)
+Usage (from any leaf directory):
+    ../lab hypothesis "increase LR to 0.04" -m "higher LR = faster convergence in early training"
+    ../lab experiment h1
+    ../lab result e1 -v keep --metrics '{"val_bpb": 0.993}'
+    ../lab context          # full research state (for session start)
+    ../lab failures         # what didn't work (don't repeat these)
 """
 
 import argparse
 import json
 import sqlite3
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-try:
-    import yaml
-except ImportError:
-    print("Error: pyyaml required. Run: pip3 install pyyaml", file=sys.stderr)
-    sys.exit(1)
+# ── Paths ──
 
-# DB and log live at repo root; campaign.yaml is read from CWD (each leaf has its own)
 HARNESS_DIR = Path(__file__).resolve().parent
 DB_PATH = HARNESS_DIR / "data" / "experiments.db"
-LOG_JSONL = HARNESS_DIR / "data" / "log.jsonl"
-CAMPAIGN_PATH = Path.cwd() / "campaign.yaml"
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS hypotheses (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
-    description TEXT,
-    rationale TEXT,
-    mechanism_explanation TEXT,
-    expected_outcome TEXT,
-    parent_experiment_id TEXT,
-    direction_id TEXT,
-    confidence REAL DEFAULT 0.5,
-    proposed_by TEXT,
+    mechanism TEXT NOT NULL,
     status TEXT DEFAULT 'proposed',
     created_at TEXT NOT NULL
 );
@@ -60,59 +35,16 @@ CREATE TABLE IF NOT EXISTS experiments (
     id TEXT PRIMARY KEY,
     hypothesis_id TEXT REFERENCES hypotheses(id),
     task_id TEXT NOT NULL,
-    direction_id TEXT,
-    phase TEXT DEFAULT 'explore',
-    code_diff TEXT,
-    worktree_branch TEXT,
-    compute_backend TEXT DEFAULT 'local',
-    config_json TEXT DEFAULT '{}',
-    status TEXT DEFAULT 'pending',
+    status TEXT DEFAULT 'running',
     created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS results (
     experiment_id TEXT PRIMARY KEY REFERENCES experiments(id),
     metrics_json TEXT DEFAULT '{}',
-    logs TEXT,
-    wall_time_seconds REAL,
-    interpretation TEXT,
     mechanism_confirmed INTEGER,
     theory_revision TEXT,
-    verdict TEXT,
-    insight TEXT,
-    created_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS insights (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    experiment_id TEXT REFERENCES experiments(id),
-    content TEXT NOT NULL,
-    insight_type TEXT DEFAULT 'observation',
-    tags TEXT DEFAULT '',
-    confidence REAL DEFAULT 0.5,
-    created_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS directions (
-    id TEXT PRIMARY KEY,
-    task_id TEXT NOT NULL,
-    title TEXT NOT NULL,
-    theory TEXT,
-    status TEXT DEFAULT 'active',
-    parent_direction_id TEXT,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS syntheses (
-    id TEXT PRIMARY KEY,
-    task_id TEXT NOT NULL,
-    direction_id TEXT,
-    experiment_ids TEXT NOT NULL,
-    content TEXT NOT NULL,
-    theory_before TEXT,
-    theory_after TEXT,
-    decision TEXT,
+    verdict TEXT NOT NULL,
     created_at TEXT NOT NULL
 );
 """
@@ -124,19 +56,14 @@ def _now():
     return datetime.now(timezone.utc).isoformat()
 
 
-def _load_campaign():
-    if not CAMPAIGN_PATH.exists():
-        return {}
-    with open(CAMPAIGN_PATH) as f:
-        result = yaml.safe_load(f)
-    return result if isinstance(result, dict) else {}
-
-
 def _task_id():
-    campaign = _load_campaign()
-    if campaign:
-        return campaign.get("name", "default")
-    return Path.cwd().name
+    """Derive task_id from CWD path relative to harness root."""
+    cwd = Path.cwd().resolve()
+    try:
+        rel = cwd.relative_to(HARNESS_DIR)
+        return str(rel).replace("/", "-").replace("\\", "-")
+    except ValueError:
+        return cwd.name
 
 
 def _get_db():
@@ -145,114 +72,48 @@ def _get_db():
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA foreign_keys = ON")
     db.executescript(SCHEMA)
-    _migrate(db)
     return db
 
 
-def _migrate(db):
-    migrations = [
-        ("hypotheses", "mechanism_explanation", "TEXT"),
-        ("hypotheses", "direction_id", "TEXT"),
-        ("experiments", "direction_id", "TEXT"),
-        ("experiments", "phase", "TEXT DEFAULT 'explore'"),
-        ("results", "mechanism_confirmed", "INTEGER"),
-        ("results", "theory_revision", "TEXT"),
-        ("insights", "insight_type", "TEXT DEFAULT 'observation'"),
-    ]
-    for table, column, col_type in migrations:
-        try:
-            db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
-        except sqlite3.OperationalError as e:
-            if "duplicate column" not in str(e).lower():
-                raise
-    db.commit()
-
-
-def _append_log(entry):
-    LOG_JSONL.parent.mkdir(parents=True, exist_ok=True)
-    with open(LOG_JSONL, "a") as f:
-        f.write(json.dumps(entry, default=str) + "\n")
-
-
 def _next_id(db, table, prefix):
-    """Generate next sequential ID like h1, h2, e1, e2, etc."""
-    row = db.execute(
-        f"SELECT COUNT(*) as cnt FROM {table}"
-    ).fetchone()
+    row = db.execute(f"SELECT COUNT(*) as cnt FROM {table}").fetchone()
     return f"{prefix}{row['cnt'] + 1}"
 
 
-# ── Subcommands ──
+# ── Commands ──
 
 def cmd_hypothesis(args):
     """Register what you're testing and WHY."""
     db = _get_db()
-    hid = args.id or _next_id(db, "hypotheses", "h")
-    now = _now()
+    hid = _next_id(db, "hypotheses", "h")
     db.execute(
-        """INSERT INTO hypotheses (id, title, description, rationale, mechanism_explanation,
-           expected_outcome, direction_id, confidence, proposed_by, status, created_at)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?)
-           ON CONFLICT(id) DO UPDATE SET
-             title=excluded.title, description=excluded.description,
-             rationale=excluded.rationale, mechanism_explanation=excluded.mechanism_explanation,
-             expected_outcome=excluded.expected_outcome, direction_id=excluded.direction_id,
-             confidence=excluded.confidence""",
-        (hid, args.title, args.description or args.title, args.rationale or args.mechanism,
-         args.mechanism, args.expected or "", args.direction or None,
-         args.confidence, "agent", "proposed", now),
+        "INSERT INTO hypotheses (id, title, mechanism, status, created_at) VALUES (?,?,?,?,?)",
+        (hid, args.title, args.mechanism, "proposed", _now()),
     )
     db.commit()
     db.close()
-    print(f"{hid}")
+    print(hid)
 
 
 def cmd_experiment(args):
-    """Log an experiment (before running it)."""
+    """Log an experiment before running it."""
     db = _get_db()
     task_id = _task_id()
-    eid = args.id or _next_id(db, "experiments", "e")
-    now = _now()
-
-    config = json.loads(args.config) if args.config else {}
-    if "estimated_cost_usd" not in config:
-        config["estimated_cost_usd"] = args.cost
-    config_str = json.dumps(config)
-
-    # Inherit direction from hypothesis if not specified
-    direction_id = args.direction or None
-    if not direction_id:
-        row = db.execute(
-            "SELECT direction_id FROM hypotheses WHERE id = ?", (args.hypothesis,)
-        ).fetchone()
-        if row and row["direction_id"]:
-            direction_id = row["direction_id"]
-
+    eid = _next_id(db, "experiments", "e")
     db.execute(
-        """INSERT INTO experiments (id, hypothesis_id, task_id, direction_id, phase,
-           code_diff, compute_backend, config_json, status, created_at)
-           VALUES (?,?,?,?,?,?,?,?,?,?)
-           ON CONFLICT(id) DO UPDATE SET
-             code_diff=excluded.code_diff, config_json=excluded.config_json,
-             direction_id=excluded.direction_id, phase=excluded.phase, status=excluded.status""",
-        (eid, args.hypothesis, task_id, direction_id, args.phase,
-         args.diff or "", args.backend or "local", config_str, "running", now),
+        "INSERT INTO experiments (id, hypothesis_id, task_id, status, created_at) VALUES (?,?,?,?,?)",
+        (eid, args.hypothesis, task_id, "running", _now()),
     )
     db.execute("UPDATE hypotheses SET status = 'testing' WHERE id = ?", (args.hypothesis,))
     db.commit()
     db.close()
-    _append_log({"event": "experiment_started", "experiment_id": eid,
-                 "hypothesis_id": args.hypothesis, "task_id": task_id, "timestamp": now})
-    print(f"{eid}")
+    print(eid)
 
 
 def cmd_result(args):
-    """Log what happened."""
+    """Log what happened after running."""
     db = _get_db()
-    now = _now()
-
     metrics = json.loads(args.metrics) if args.metrics else {}
-    metrics_str = json.dumps(metrics)
 
     mech_val = None
     if args.mechanism_confirmed:
@@ -261,16 +122,13 @@ def cmd_result(args):
         mech_val = 0
 
     db.execute(
-        """INSERT INTO results (experiment_id, metrics_json, wall_time_seconds,
-           interpretation, mechanism_confirmed, theory_revision, verdict, insight, created_at)
-           VALUES (?,?,?,?,?,?,?,?,?)
+        """INSERT INTO results (experiment_id, metrics_json, mechanism_confirmed,
+           theory_revision, verdict, created_at) VALUES (?,?,?,?,?,?)
            ON CONFLICT(experiment_id) DO UPDATE SET
-             metrics_json=excluded.metrics_json, wall_time_seconds=excluded.wall_time_seconds,
-             interpretation=excluded.interpretation, mechanism_confirmed=excluded.mechanism_confirmed,
-             theory_revision=excluded.theory_revision, verdict=excluded.verdict, insight=excluded.insight""",
-        (args.experiment, metrics_str, args.wall_time or 0.0,
-         args.interpretation or "", mech_val, args.theory_revision or None,
-         args.verdict, args.insight or "", now),
+             metrics_json=excluded.metrics_json, mechanism_confirmed=excluded.mechanism_confirmed,
+             theory_revision=excluded.theory_revision, verdict=excluded.verdict""",
+        (args.experiment, json.dumps(metrics), mech_val,
+         args.theory_revision or None, args.verdict, _now()),
     )
     db.execute("UPDATE experiments SET status = ? WHERE id = ?", (args.verdict, args.experiment))
 
@@ -280,382 +138,51 @@ def cmd_result(args):
         new_status = "confirmed" if args.verdict == "keep" else "rejected" if args.verdict == "discard" else "tested"
         db.execute("UPDATE hypotheses SET status = ? WHERE id = ?", (new_status, row["hypothesis_id"]))
 
-    # Log insight if provided
-    if args.insight:
-        db.execute("INSERT INTO insights (experiment_id, content, insight_type, created_at) VALUES (?,?,?,?)",
-                   (args.experiment, args.insight, "observation", now))
-    if args.theory_revision:
-        db.execute("INSERT INTO insights (experiment_id, content, insight_type, created_at) VALUES (?,?,?,?)",
-                   (args.experiment, args.theory_revision, "theory_update", now))
-
     db.commit()
     db.close()
-    _append_log({"event": "experiment_completed", "experiment_id": args.experiment,
-                 "metrics": metrics, "verdict": args.verdict, "timestamp": now})
-    print(f"{args.verdict}")
+    print(args.verdict)
 
 
-def cmd_insight(args):
-    """Log a learning."""
-    db = _get_db()
-    now = _now()
-    valid_types = {"observation", "literature", "synthesis", "theory_update", "novel_approach"}
-    if args.type not in valid_types:
-        print(f"Error: --type must be one of {valid_types}", file=sys.stderr)
-        sys.exit(1)
-    db.execute(
-        "INSERT INTO insights (content, insight_type, tags, confidence, created_at) VALUES (?,?,?,?,?)",
-        (args.content, args.type, args.tags or "", args.confidence, now),
-    )
-    db.commit()
-    db.close()
-    print(f"ok")
-
-
-def cmd_direction(args):
-    """Register a research thread."""
+def cmd_context(_args):
+    """Dump full research state for session reconstruction."""
     db = _get_db()
     task_id = _task_id()
-    did = args.id or args.title.lower().replace(" ", "-")[:30]
-    now = _now()
-    db.execute(
-        """INSERT INTO directions (id, task_id, title, theory, status, parent_direction_id, created_at, updated_at)
-           VALUES (?,?,?,?,?,?,?,?)
-           ON CONFLICT(id) DO UPDATE SET
-             title=excluded.title, theory=excluded.theory, updated_at=excluded.updated_at""",
-        (did, task_id, args.title, args.theory or None, "active", args.parent or None, now, now),
-    )
-    db.commit()
-    db.close()
-    print(f"{did}")
-
-
-def cmd_synthesize(args):
-    """Reflect across experiments."""
-    db = _get_db()
-    task_id = _task_id()
-    sid = _next_id(db, "syntheses", "s")
-    now = _now()
-
-    valid_decisions = {"continue", "pivot", "branch", "novel_approach", "success", "failure"}
-    if args.decision not in valid_decisions:
-        print(f"Error: --decision must be one of {valid_decisions}", file=sys.stderr)
-        sys.exit(1)
-
-    exp_ids = json.dumps(args.experiments.split(",")) if args.experiments else "[]"
-
-    db.execute(
-        """INSERT INTO syntheses (id, task_id, direction_id, experiment_ids, content,
-           theory_before, theory_after, decision, created_at) VALUES (?,?,?,?,?,?,?,?,?)""",
-        (sid, task_id, args.direction or None, exp_ids, args.content,
-         args.theory_before or None, args.theory_after or None, args.decision, now),
-    )
-    db.execute("INSERT INTO insights (content, insight_type, created_at) VALUES (?,?,?)",
-               (args.content, "synthesis", now))
-    db.commit()
-    db.close()
-    print(f"{sid}")
-
-
-def cmd_validate(args):
-    """Pre-run readiness check (advisory or blocking based on campaign mode)."""
-    campaign = _load_campaign()
-    mode = campaign.get("mode", "open_research")
-    level = int(campaign.get("level", 1))
-    strategy = campaign.get("strategy", {}) or {}
-    budget = campaign.get("budget", {}) or {}
-
-    errors = []
-    warnings = []
-    db = _get_db()
-
-    # Check 1: Hypothesis exists
-    hypothesis = db.execute("SELECT * FROM hypotheses WHERE id = ?", (args.hypothesis,)).fetchone()
-    if not hypothesis:
-        errors.append(f"Hypothesis '{args.hypothesis}' not found. Run: ./lab hypothesis \"...\" first.")
-    else:
-        if not hypothesis["rationale"]:
-            errors.append("Missing rationale. Use --mechanism when logging hypothesis.")
-        if not hypothesis["expected_outcome"]:
-            warnings.append("No expected_outcome set.")
-
-    # Check 2: Understanding gate
-    if hypothesis:
-        mechanism = hypothesis["mechanism_explanation"] or ""
-        if not mechanism.strip():
-            if level >= 2:
-                errors.append(f"Understanding gate failed (L{level}): no mechanism_explanation. "
-                              "Re-run ./lab hypothesis with --mechanism.")
-            else:
-                warnings.append("No mechanism_explanation. Brief reasoning improves quality.")
-
-    # Check 3: Literature (L2+)
-    if level >= 2:
-        lit_count = db.execute(
-            "SELECT COUNT(*) as cnt FROM insights WHERE insight_type = 'literature'"
-        ).fetchone()["cnt"]
-        if lit_count == 0:
-            lit_depth = strategy.get("literature", {2: "scan", 3: "review", 4: "survey"}.get(level, "none"))
-            if lit_depth != "none":
-                errors.append(f"No literature insights found (L{level} requires {lit_depth}). "
-                              "Run: ./lab insight \"...\" --type literature")
-
-    # Check 4: Synthesis cadence (L3+)
-    if level >= 3:
-        task_id = _task_id()
-        exp_count = db.execute(
-            "SELECT COUNT(*) as cnt FROM experiments WHERE task_id = ?", (task_id,)
-        ).fetchone()["cnt"]
-        synth_count = db.execute(
-            "SELECT COUNT(*) as cnt FROM syntheses WHERE task_id = ?", (task_id,)
-        ).fetchone()["cnt"]
-        expected = exp_count // 3
-        if synth_count < expected:
-            errors.append(f"Synthesis overdue: {exp_count} experiments, {synth_count}/{expected} syntheses. "
-                          "Run: ./lab synthesize ...")
-
-    # Check 5: Budget per direction
-    max_pct = float(strategy.get("max_budget_per_direction", 0.30))
-    total_budget = float(budget.get("compute_usd", 0))
-    if hypothesis and hypothesis["direction_id"] and total_budget > 0:
-        dir_id = hypothesis["direction_id"]
-        dir_spend = db.execute(
-            "SELECT SUM(COALESCE(json_extract(config_json, '$.estimated_cost_usd'), 0)) as spend "
-            "FROM experiments WHERE direction_id = ?", (dir_id,)
-        ).fetchone()["spend"] or 0.0
-        if (dir_spend + args.cost) > (total_budget * max_pct):
-            errors.append(f"Direction '{dir_id}' budget exceeded: ${dir_spend:.2f} + ${args.cost:.2f} "
-                          f"> cap ${total_budget * max_pct:.2f}. Consider pivoting.")
-
-    db.close()
-
-    enforce = mode == "bounded_optimization"
-    if errors:
-        label = "BLOCKED" if enforce else "ADVISORY"
-        for e in errors:
-            print(f"  {label}: {e}")
-        if not enforce:
-            print(f"\n  (open_research mode — you may proceed)")
-        if warnings:
-            for w in warnings:
-                print(f"  WARNING: {w}")
-        sys.exit(1 if enforce else 0)
-    elif warnings:
-        for w in warnings:
-            print(f"  WARNING: {w}")
-        print("PASS")
-    else:
-        print("PASS")
-
-
-def cmd_context(args):
-    """Full research history dump."""
-    db = _get_db()
-    task_id = _task_id()
-    campaign = _load_campaign()
-    metric_name = ""
-    lower_is_better = True
-    metric_cfg = campaign.get("metric", {})
-    if isinstance(metric_cfg, dict):
-        metric_name = metric_cfg.get("name", "")
-        lower_is_better = metric_cfg.get("direction", "lower") == "lower"
-
-    # Directions
-    directions = db.execute(
-        """SELECT d.id, d.title, d.status, d.theory,
-                  COUNT(e.id) as exp_count,
-                  SUM(CASE WHEN r.verdict = 'keep' THEN 1 ELSE 0 END) as successes,
-                  SUM(CASE WHEN r.verdict IN ('discard','crash') THEN 1 ELSE 0 END) as failures
-           FROM directions d
-           LEFT JOIN experiments e ON e.direction_id = d.id
-           LEFT JOIN results r ON r.experiment_id = e.id
-           WHERE d.task_id = ? GROUP BY d.id ORDER BY d.created_at DESC""",
-        (task_id,),
-    ).fetchall()
 
     # Recent experiments
     recent = db.execute(
-        """SELECT e.id, e.direction_id, e.phase, h.title, h.mechanism_explanation,
-                  r.verdict, r.metrics_json, r.insight, r.mechanism_confirmed, r.theory_revision
+        """SELECT e.id, h.title, h.mechanism, r.verdict, r.metrics_json,
+                  r.mechanism_confirmed, r.theory_revision
            FROM experiments e
            JOIN hypotheses h ON e.hypothesis_id = h.id
            LEFT JOIN results r ON e.id = r.experiment_id
-           WHERE e.task_id = ? ORDER BY e.created_at DESC LIMIT 15""",
+           WHERE e.task_id = ? ORDER BY e.created_at DESC LIMIT 20""",
         (task_id,),
     ).fetchall()
 
-    # Best result
-    best = None
-    if metric_name:
-        direction = "ASC" if lower_is_better else "DESC"
-        best = db.execute(
-            f"""SELECT h.title, r.metrics_json FROM results r
-                JOIN experiments e ON r.experiment_id = e.id
-                JOIN hypotheses h ON e.hypothesis_id = h.id
-                WHERE e.task_id = ? AND r.verdict = 'keep'
-                  AND json_extract(r.metrics_json, '$.' || ?) IS NOT NULL
-                ORDER BY json_extract(r.metrics_json, '$.' || ?) {direction} LIMIT 1""",
-            (task_id, metric_name, metric_name),
-        ).fetchone()
-
-    # Failed
-    failed = db.execute(
-        """SELECT h.title, r.interpretation, r.theory_revision FROM experiments e
-           JOIN hypotheses h ON e.hypothesis_id = h.id
-           JOIN results r ON e.id = r.experiment_id
-           WHERE e.task_id = ? AND r.verdict IN ('discard', 'crash')""",
-        (task_id,),
-    ).fetchall()
-
-    # Syntheses
-    syntheses = db.execute(
-        "SELECT content, decision, theory_after FROM syntheses WHERE task_id = ? ORDER BY created_at DESC LIMIT 3",
-        (task_id,),
-    ).fetchall()
-
-    # Theory updates (scoped to this leaf via experiment join)
-    theory_updates = db.execute(
-        """SELECT i.content FROM insights i
-           JOIN experiments e ON i.experiment_id = e.id
-           WHERE i.insight_type = 'theory_update' AND e.task_id = ?
-           ORDER BY i.created_at DESC LIMIT 5""",
-        (task_id,),
-    ).fetchall()
-
-    # Count
     count = db.execute("SELECT COUNT(*) as cnt FROM experiments WHERE task_id = ?", (task_id,)).fetchone()["cnt"]
     db.close()
 
-    # Format
-    print(f"## Research Context: {campaign.get('name', task_id)}")
-    print(f"Experiments run: {count}")
-
-    if directions:
-        print(f"\n### Directions")
-        for d in directions:
-            print(f"  {d['id']}: {d['title']} [{d['status']}] "
-                  f"({d['exp_count']} runs, {d['successes']} kept, {d['failures']} failed)")
-            if d["theory"]:
-                print(f"    Theory: {d['theory']}")
+    print(f"## Research Context: {task_id}")
+    print(f"Experiments: {count}")
 
     if recent:
-        print(f"\n### Recent Experiments")
+        print(f"\n### History")
         for r in reversed(list(recent)):
             mech = ""
             if r["mechanism_confirmed"] is not None:
                 mech = " | mechanism: " + ("confirmed" if r["mechanism_confirmed"] else "refuted")
             rev = f" | revision: {r['theory_revision']}" if r["theory_revision"] else ""
-            print(f"  [{r['phase']}] {r['title']}: {r['verdict'] or 'pending'} "
-                  f"| {r['metrics_json'] or '{}'}{mech}{rev}")
+            print(f"  {r['title']}: {r['verdict'] or 'running'} | {r['metrics_json'] or '{}'}{mech}{rev}")
     else:
-        print(f"\n### Recent Experiments\nNone yet.")
-
-    if best:
-        print(f"\n### Best Result\n  {best['title']}: {best['metrics_json']}")
-    else:
-        print(f"\n### Best Result\n  None yet.")
-
-    if failed:
-        print(f"\n### Failed Approaches (Don't Repeat)")
-        for r in failed:
-            rev = f" -> {r['theory_revision']}" if r["theory_revision"] else ""
-            print(f"  - {r['title']}: {r['interpretation'] or '?'}{rev}")
-
-    if syntheses:
-        print(f"\n### Recent Syntheses")
-        for s in syntheses:
-            print(f"  [{s['decision']}] {s['content'][:200]}")
-
-    if theory_updates:
-        print(f"\n### Theory Updates")
-        for t in theory_updates:
-            print(f"  - {t['content']}")
+        print("\nNo experiments yet.")
 
 
-def cmd_status(args):
-    """Campaign health check."""
-    campaign = _load_campaign()
-    mode = campaign.get("mode", "open_research")
-    level = campaign.get("level", 1)
-    budget = campaign.get("budget", {}) or {}
-    task_id = _task_id()
-
-    db = _get_db()
-    total_exp = db.execute("SELECT COUNT(*) as cnt FROM experiments WHERE task_id = ?", (task_id,)).fetchone()["cnt"]
-    total_spend = db.execute(
-        "SELECT SUM(COALESCE(json_extract(config_json, '$.estimated_cost_usd'), 0)) as spend "
-        "FROM experiments WHERE task_id = ?", (task_id,)
-    ).fetchone()["spend"] or 0.0
-    kept = db.execute(
-        "SELECT COUNT(*) as cnt FROM results r JOIN experiments e ON r.experiment_id = e.id "
-        "WHERE e.task_id = ? AND r.verdict = 'keep'", (task_id,)
-    ).fetchone()["cnt"]
-    failed = db.execute(
-        "SELECT COUNT(*) as cnt FROM results r JOIN experiments e ON r.experiment_id = e.id "
-        "WHERE e.task_id = ? AND r.verdict IN ('discard', 'crash')", (task_id,)
-    ).fetchone()["cnt"]
-    db.close()
-
-    max_budget = budget.get("compute_usd", 0)
-    max_exp = budget.get("max_experiments", 0)
-
-    print(f"Campaign: L{level} ({mode})")
-    print(f"Experiments: {total_exp}/{max_exp}")
-    print(f"Spend: ${total_spend:.2f}/${max_budget:.0f}")
-    print(f"Results: {kept} kept, {failed} failed")
-
-    # Alerts
-    if max_budget and total_spend > max_budget * 0.8:
-        print(f"ALERT: Budget >80% consumed")
-    if max_exp and total_exp > max_exp * 0.8:
-        print(f"ALERT: Experiment count >80%")
-    if failed > 0 and kept == 0 and total_exp >= 5:
-        print(f"ALERT: {failed} failures, 0 successes. Consider pivot.")
-
-
-def cmd_best(args):
-    """Best result so far."""
-    campaign = _load_campaign()
-    metric_cfg = campaign.get("metric", {}) or {}
-    metric_name = metric_cfg.get("name", "")
-    lower_is_better = metric_cfg.get("direction", "lower") == "lower"
-    task_id = _task_id()
-
-    db = _get_db()
-    if metric_name:
-        direction = "ASC" if lower_is_better else "DESC"
-        row = db.execute(
-            f"""SELECT h.title, r.metrics_json, r.interpretation FROM results r
-                JOIN experiments e ON r.experiment_id = e.id
-                JOIN hypotheses h ON e.hypothesis_id = h.id
-                WHERE e.task_id = ? AND r.verdict = 'keep'
-                  AND json_extract(r.metrics_json, '$.' || ?) IS NOT NULL
-                ORDER BY json_extract(r.metrics_json, '$.' || ?) {direction} LIMIT 1""",
-            (task_id, metric_name, metric_name),
-        ).fetchone()
-    else:
-        row = db.execute(
-            """SELECT h.title, r.metrics_json, r.interpretation FROM results r
-               JOIN experiments e ON r.experiment_id = e.id
-               JOIN hypotheses h ON e.hypothesis_id = h.id
-               WHERE e.task_id = ? AND r.verdict = 'keep'
-               ORDER BY r.created_at DESC LIMIT 1""",
-            (task_id,),
-        ).fetchone()
-    db.close()
-
-    if not row:
-        print("No successful results yet.")
-    else:
-        print(f"{row['title']}: {row['metrics_json']}")
-
-
-def cmd_failures(args):
-    """Failed approaches (don't repeat these)."""
+def cmd_failures(_args):
+    """List failed approaches so you don't repeat them."""
     task_id = _task_id()
     db = _get_db()
     rows = db.execute(
-        """SELECT h.title, r.interpretation FROM experiments e
+        """SELECT h.title, h.mechanism, r.theory_revision FROM experiments e
            JOIN hypotheses h ON e.hypothesis_id = h.id
            JOIN results r ON e.id = r.experiment_id
            WHERE e.task_id = ? AND r.verdict IN ('discard', 'crash')
@@ -665,102 +192,40 @@ def cmd_failures(args):
     db.close()
 
     if not rows:
-        print("No failed approaches recorded.")
+        print("No failures yet.")
     else:
         for r in rows:
-            print(f"- {r['title']}: {r['interpretation'] or 'no interpretation'}")
+            rev = f" -> {r['theory_revision']}" if r["theory_revision"] else ""
+            print(f"- {r['title']}: {r['mechanism']}{rev}")
 
 
-# ── CLI Parser ──
+# ── CLI ──
 
 def main():
-    parser = argparse.ArgumentParser(prog="lab", description="Structured experiment tracking CLI")
+    parser = argparse.ArgumentParser(prog="lab", description="Structured experiment tracking")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # hypothesis
     p = sub.add_parser("hypothesis", help="Register what you're testing and WHY")
     p.add_argument("title", help="What you're testing")
-    p.add_argument("--mechanism", "-m", required=True, help="WHY this should work (causal mechanism)")
-    p.add_argument("--expected", "-e", default="", help="Expected outcome")
-    p.add_argument("--direction", "-d", default="", help="Research direction ID")
-    p.add_argument("--description", default="", help="Longer description")
-    p.add_argument("--rationale", default="", help="Rationale (defaults to mechanism)")
-    p.add_argument("--confidence", type=float, default=0.5, help="Confidence 0-1")
-    p.add_argument("--id", default="", help="Custom ID (auto-generated if omitted)")
+    p.add_argument("--mechanism", "-m", required=True, help="WHY this should work")
     p.set_defaults(func=cmd_hypothesis)
 
-    # experiment
-    p = sub.add_parser("experiment", help="Log an experiment (before running)")
-    p.add_argument("hypothesis", help="Hypothesis ID")
-    p.add_argument("--cost", type=float, default=0.0, help="Estimated cost in USD")
-    p.add_argument("--config", default="", help="JSON config string")
-    p.add_argument("--phase", default="explore", choices=["explore", "exploit", "validate", "synthesis"])
-    p.add_argument("--diff", default="", help="Code diff")
-    p.add_argument("--direction", default="", help="Direction ID (inherits from hypothesis if omitted)")
-    p.add_argument("--backend", default="local", help="Compute backend")
-    p.add_argument("--id", default="", help="Custom ID (auto-generated if omitted)")
+    p = sub.add_parser("experiment", help="Log before running")
+    p.add_argument("hypothesis", help="Hypothesis ID (e.g. h1)")
     p.set_defaults(func=cmd_experiment)
 
-    # result
-    p = sub.add_parser("result", help="Log what happened")
-    p.add_argument("experiment", help="Experiment ID")
-    p.add_argument("--verdict", "-v", required=True, choices=["keep", "discard", "crash", "inconclusive"])
+    p = sub.add_parser("result", help="Log after running")
+    p.add_argument("experiment", help="Experiment ID (e.g. e1)")
+    p.add_argument("--verdict", "-v", required=True, choices=["keep", "discard", "crash"])
     p.add_argument("--metrics", default="{}", help="JSON metrics")
-    p.add_argument("--interpretation", "-i", default="", help="What happened")
-    p.add_argument("--insight", default="", help="What you learned")
-    p.add_argument("--mechanism-confirmed", action="store_true", help="The hypothesized mechanism was correct")
-    p.add_argument("--mechanism-refuted", action="store_true", help="The hypothesized mechanism was wrong")
+    p.add_argument("--mechanism-confirmed", action="store_true")
+    p.add_argument("--mechanism-refuted", action="store_true")
     p.add_argument("--theory-revision", default="", help="How your understanding changed")
-    p.add_argument("--wall-time", type=float, default=0.0, help="Wall time in seconds")
     p.set_defaults(func=cmd_result)
 
-    # insight
-    p = sub.add_parser("insight", help="Log a learning")
-    p.add_argument("content", help="What you learned")
-    p.add_argument("--type", default="observation",
-                   choices=["observation", "literature", "synthesis", "theory_update", "novel_approach"])
-    p.add_argument("--tags", default="", help="Comma-separated tags")
-    p.add_argument("--confidence", type=float, default=0.5)
-    p.set_defaults(func=cmd_insight)
-
-    # direction
-    p = sub.add_parser("direction", help="Register a research thread")
-    p.add_argument("title", help="Direction name")
-    p.add_argument("--theory", "-t", default="", help="Why this direction should work")
-    p.add_argument("--parent", default="", help="Parent direction (if pivoting)")
-    p.add_argument("--id", default="", help="Custom ID (derived from title if omitted)")
-    p.set_defaults(func=cmd_direction)
-
-    # synthesize
-    p = sub.add_parser("synthesize", help="Reflect across experiments")
-    p.add_argument("content", help="Your synthesis")
-    p.add_argument("--experiments", default="", help="Comma-separated experiment IDs covered")
-    p.add_argument("--decision", default="continue",
-                   choices=["continue", "pivot", "branch", "novel_approach", "success", "failure"])
-    p.add_argument("--theory-before", default="", help="Mental model before synthesis")
-    p.add_argument("--theory-after", default="", help="Mental model after synthesis")
-    p.add_argument("--direction", default="", help="Direction ID")
-    p.set_defaults(func=cmd_synthesize)
-
-    # validate
-    p = sub.add_parser("validate", help="Pre-run readiness check")
-    p.add_argument("hypothesis", help="Hypothesis ID")
-    p.add_argument("--cost", type=float, default=0.0, help="Estimated cost in USD")
-    p.set_defaults(func=cmd_validate)
-
-    # context
-    p = sub.add_parser("context", help="Full research history")
+    p = sub.add_parser("context", help="Full research state")
     p.set_defaults(func=cmd_context)
 
-    # status
-    p = sub.add_parser("status", help="Campaign health check")
-    p.set_defaults(func=cmd_status)
-
-    # best
-    p = sub.add_parser("best", help="Best result so far")
-    p.set_defaults(func=cmd_best)
-
-    # failures
     p = sub.add_parser("failures", help="Failed approaches")
     p.set_defaults(func=cmd_failures)
 

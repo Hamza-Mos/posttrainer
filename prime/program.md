@@ -92,58 +92,24 @@ CLAUDE.md                 # Claude Code instructions
 ```
 LOOP FOREVER:
   1. Reconstruct state: read results.tsv + ../lab context + ../lab failures
-  2. Research if needed (read papers, docs, inspect logs from previous runs)
-  3. Decide what to try next + form hypothesis — WHY will this improve eval_reward_mean?
+  2. Decide what to try + form hypothesis — WHY will this improve eval_reward_mean?
      Priority: reward function > environment design > data/curriculum > config
-       ../lab hypothesis "what you're changing" \
-         --mechanism "why it should improve reward"
-  4. Modify ONE lever (one file change per experiment)
-  5. Validate your change:
-     - If env changed: test locally with `prime eval run <env_name> -m <model> -n 5`
-     - If config changed: verify params within safe ranges (see rules.md)
-     - If rewards changed: check that reward values are reasonable (0-1 range preferred)
-  6. git commit -m "exp: <description of what you changed and why>"
-  7. Run the experiment:
-     prime rl run configs/rl/<config>.toml
-  8. Monitor training:
-     prime rl logs <run-id> -f
-  9. Extract results from logs (reward curves, eval metrics)
-  10. Record in results.tsv:
-      <commit> <eval_reward_mean> <status> <description>
-  11. Log result to lab:
-       ../lab result <E_ID> -v keep|discard|crash \
-         --metrics '{"eval_reward_mean": 0.72}' \
-         --mechanism-confirmed (or --mechanism-refuted) \
-         --theory-revision "what I learned"
-  12. Decision:
-      - If eval_reward_mean IMPROVED → KEEP
-      - If eval_reward_mean DID NOT improve → DISCARD: git reset --hard HEAD~1
-      - If crashed → log as "crash", revert, try different approach
-      - SPECIAL: If reward function changed → baseline_reset, always keep
-  13. Every 3-5 experiments → synthesize:
-       ../lab synthesize "what you learned" \
-         --experiments "e1,e2,e3" --decision continue|pivot
+       ../lab hypothesis "what" -m "why"
+  3. Modify ONE lever → validate → git commit → ../lab experiment <H_ID>
+  4. Run: prime rl run configs/rl/<config>.toml
+  5. Monitor: prime rl logs <run-id> -f
+  6. Extract results from logs (reward curves, eval metrics)
+  7. Log to results.tsv + ../lab result <E_ID> -v keep|discard|crash \
+       --metrics '{"eval_reward_mean": X}' --mechanism-confirmed (or --mechanism-refuted) \
+       --theory-revision "what I learned"
+  8. If improved → KEEP. If not → git reset --hard HEAD~1.
+     SPECIAL: reward function changes are baseline_resets — always keep.
   NEVER STOP
 ```
 
-**Research discipline:** Speed without understanding is brute force. Before every experiment, explain WHY in `--mechanism`. After every result, confirm or refute the mechanism. Every 3-5 experiments, synthesize what you learned.
+**Research discipline:** Before every experiment, state WHY (`--mechanism`). After every result, confirm or refute.
 
-**NEVER STOP**: Once the loop begins, do NOT pause to ask the human if you should continue. Do NOT ask "should I keep going?" or "is this a good stopping point?". The human might be asleep, or away from the computer and expects you to continue working *indefinitely* until manually stopped. You are autonomous. If you run out of ideas, think harder — read papers, redesign the environment, try different reward structures. The loop runs until the human interrupts you, period.
-
-### Your Tools
-
-```
-../lab hypothesis "title" -m "mechanism"                      # what + why
-../lab experiment H_ID --cost 0.0                             # log before running
-../lab result E_ID -v keep --metrics '{"eval_reward_mean": X}' # log after
-../lab insight "learned X" --type observation                  # standalone learning
-../lab direction "name" --theory "why"                         # research thread
-../lab synthesize "reflection" --decision continue             # periodic reflection
-../lab context                                                 # full history
-../lab status                                                  # budget check
-../lab best                                                    # best result
-../lab failures                                                # what didn't work
-```
+**NEVER STOP**: Do NOT ask "should I continue?". The human expects you to work *indefinitely* until manually stopped. If you run out of ideas, think harder — read papers, redesign environments, try different reward structures.
 
 ### Pre-Run Validation
 Before every `prime rl run`, validate locally:

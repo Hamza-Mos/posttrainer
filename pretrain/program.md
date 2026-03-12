@@ -112,51 +112,22 @@ The experiment runs on a dedicated branch (e.g. `experiment/lr-sweep` or `experi
 LOOP FOREVER:
   1. Reconstruct state: read results.tsv + ../lab context + ../lab failures
   2. Form a theory — WHY will this change lower val_bpb?
-  3. Log it:
-       ../lab hypothesis "what you're changing" \
-         --mechanism "why it should improve bpb"
-  4. Modify train.py
-  5. git commit
-  6. Run: modal run modal_run.py > run.log 2>&1
-  7. Parse: grep "^val_bpb:\|^peak_vram_mb:" run.log
-  8. If empty (crash): tail -n 50 run.log, diagnose, fix or skip
-  9. Record results in results.tsv (do NOT commit it — leave untracked)
-  10. Log result:
-       ../lab result <E_ID> -v keep|discard|crash \
-         --metrics '{"val_bpb": 0.993, "peak_vram_mb": 45060}' \
-         --mechanism-confirmed (or --mechanism-refuted) \
-         --theory-revision "what I learned"
-  11. If improved → keep commit, advance branch
-  12. If equal/worse → git reset to previous commit
-  13. Every 3-5 experiments → synthesize:
-       ../lab synthesize "what you learned" \
-         --experiments "e1,e2,e3" --decision continue|pivot
-  14. NEVER STOP. Do not ask "should I continue?". Loop until interrupted.
+       ../lab hypothesis "what" -m "why"
+  3. Modify train.py → git commit → ../lab experiment <H_ID>
+  4. Run: modal run modal_run.py > run.log 2>&1
+  5. Parse: grep "^val_bpb:\|^peak_vram_mb:" run.log
+  6. If crash: tail -n 50 run.log, diagnose, fix or skip
+  7. Log to results.tsv (untracked) + ../lab result <E_ID> -v keep|discard|crash \
+       --metrics '{"val_bpb": X}' --mechanism-confirmed (or --mechanism-refuted) \
+       --theory-revision "what I learned"
+  8. If improved → keep. If not → git reset to previous commit.
+  NEVER STOP
 ```
 
-The idea is that you are a completely autonomous researcher trying things out. If they work, keep. If they don't, discard. And you're advancing the branch so that you can iterate.
+**Research discipline:** Before every experiment, state WHY (`--mechanism`). After every result, confirm or refute. This turns 100 random experiments into actual research.
 
-**Research discipline:** Speed without understanding is brute force. Before every experiment, explain WHY in `--mechanism`. After every result, confirm or refute the mechanism. Every 3-5 experiments, synthesize what you learned. This turns 100 random experiments into actual research.
+**Timeout**: ~5 minutes per experiment. Kill anything over 10 minutes.
 
-**Timeout**: Each experiment should take ~5 minutes total (+ a few seconds for startup and eval overhead). If a run exceeds 10 minutes, kill it and treat it as a failure (discard and revert).
+**Crashes**: If trivial (typo, missing import), fix and re-run. If fundamentally broken, skip and move on.
 
-**Crashes**: If a run crashes (OOM, or a bug, or etc.), use your judgment: If it's something dumb and easy to fix (e.g. a typo, a missing import), fix it and re-run. If the idea itself is fundamentally broken, just skip it, log "crash" as the status in the tsv, and move on.
-
-**NEVER STOP**: Once the experiment loop has begun (after the initial setup), do NOT pause to ask the human if you should continue. Do NOT ask "should I keep going?" or "is this a good stopping point?". The human might be asleep, or gone from a computer and expects you to continue working *indefinitely* until you are manually stopped. You are autonomous. If you run out of ideas, think harder — read papers referenced in the code, re-read the in-scope files for new angles, try combining previous near-misses, try more radical architectural changes. The loop runs until the human interrupts you, period.
-
-As an example use case, a user might leave you running while they sleep. If each experiment takes you ~5 minutes then you can run approx 12/hour, for a total of about 100 over the duration of the average human sleep. The user then wakes up to experimental results, all completed by you while they slept!
-
-## Your Tools
-
-```
-../lab hypothesis "title" -m "mechanism"              # what + why
-../lab experiment H_ID --cost 0.0                     # log before running
-../lab result E_ID -v keep --metrics '{"val_bpb": X}' # log after running
-../lab insight "learned X" --type observation          # standalone learning
-../lab direction "name" --theory "why"                 # research thread
-../lab synthesize "reflection" --decision continue     # periodic reflection
-../lab context                                         # full history
-../lab status                                          # budget check
-../lab best                                            # best result
-../lab failures                                        # what didn't work
-```
+**NEVER STOP**: Do NOT ask "should I continue?". The human expects you to work *indefinitely* until manually stopped. If you run out of ideas, think harder — read papers, re-read code, combine near-misses, try radical changes.

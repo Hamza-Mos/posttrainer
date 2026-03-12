@@ -72,62 +72,24 @@ Get your API key from [Tinker](https://tinker.thinkingmachines.ai). See [install
 ```
 LOOP FOREVER:
   1. Reconstruct state: read results.tsv + ../../lab context + ../../lab failures
-  2. Research if needed (read papers, docs, cookbook recipes, inspect previous failures)
-  3. Decide what to try next + form hypothesis — WHY will this improve eval_reward_mean?
+  2. Decide what to try + form hypothesis — WHY will this improve eval_reward_mean?
      Priority: reward function > training data/curriculum > hyperparameters
-       ../../lab hypothesis "what you're changing" \
-         --mechanism "why it should improve reward"
-  4. Modify ONE lever (one file change per experiment)
-  5. Validate your change:
-     - If reward.py changed: test it with 3 sample inputs manually
-     - If prompts changed: verify JSONL format, check for duplicates with eval set
-     - If hyperparams changed: verify they're within safe ranges (see rules.md)
-  6. git commit -m "exp: <description of what you changed and why>"
-  7. Run the experiment:
-     python train.py > run.log 2>&1
-     (redirect everything — do NOT use tee or let output flood your context)
-  8. Extract results:
-     grep '^eval_reward_mean:' run.log
-     grep '^eval_all_one_rate:' run.log
-     grep '^eval_all_zero_rate:' run.log
-  9. Read the SAMPLE COMPLETIONS section in run.log (guards against reward hacking)
-  10. Record in results.tsv:
-      <commit> <eval_reward_mean> <eval_all_one_rate> <eval_all_zero_rate> <keep|discard|crash> <description>
-  11. Log result to lab:
-       ../../lab result <E_ID> -v keep|discard|crash \
-         --metrics '{"eval_reward_mean": 0.72, "eval_all_one_rate": 0.3}' \
-         --mechanism-confirmed (or --mechanism-refuted) \
-         --theory-revision "what I learned"
-  12. Decision:
-      - If eval_reward_mean IMPROVED over best in results.tsv → KEEP (do nothing)
-      - If eval_reward_mean DID NOT improve → DISCARD: git reset --hard HEAD~1
-      - If crashed → log as "crash" in results.tsv, revert, try different approach
-      - SPECIAL: If you changed reward.py, this is a baseline_reset — always keep,
-        but note the old metric is not comparable to the new metric
-  13. Every 3-5 experiments → synthesize:
-       ../../lab synthesize "what you learned across these experiments" \
-         --experiments "e1,e2,e3" --decision continue|pivot
+       ../../lab hypothesis "what" -m "why"
+  3. Modify ONE lever → validate → git commit → ../../lab experiment <H_ID>
+  4. Run: python train.py > run.log 2>&1
+  5. Extract: grep '^eval_reward_mean:\|^eval_all_one_rate:\|^eval_all_zero_rate:' run.log
+  6. Read SAMPLE COMPLETIONS in run.log (guards against reward hacking)
+  7. Log to results.tsv + ../../lab result <E_ID> -v keep|discard|crash \
+       --metrics '{"eval_reward_mean": X}' --mechanism-confirmed (or --mechanism-refuted) \
+       --theory-revision "what I learned"
+  8. If improved → KEEP. If not → git reset --hard HEAD~1.
+     SPECIAL: reward.py changes are baseline_resets — always keep.
   NEVER STOP
 ```
 
-**Research discipline:** Speed without understanding is brute force. Before every experiment, explain WHY in `--mechanism`. After every result, confirm or refute the mechanism. Every 3-5 experiments, synthesize what you learned.
+**Research discipline:** Before every experiment, state WHY (`--mechanism`). After every result, confirm or refute.
 
-**NEVER STOP**: Once the loop begins, do NOT pause to ask the human if you should continue. Do NOT ask "should I keep going?" or "is this a good stopping point?". The human might be asleep, or away from the computer and expects you to continue working *indefinitely* until manually stopped. You are autonomous. If you run out of ideas, think harder — read papers, re-read the code, try combining previous near-misses, try more radical changes. The loop runs until the human interrupts you, period.
-
-### Your Tools
-
-```
-../../lab hypothesis "title" -m "mechanism"                   # what + why
-../../lab experiment H_ID --cost 0.50                         # log before running
-../../lab result E_ID -v keep --metrics '{"eval_reward_mean": X}' # log after
-../../lab insight "learned X" --type observation              # standalone learning
-../../lab direction "name" --theory "why"                     # research thread
-../../lab synthesize "reflection" --decision continue         # periodic reflection
-../../lab context                                             # full history
-../../lab status                                              # budget check
-../../lab best                                                # best result
-../../lab failures                                            # what didn't work
-```
+**NEVER STOP**: Do NOT ask "should I continue?". The human expects you to work *indefinitely* until manually stopped. If you run out of ideas, think harder — read papers, re-read code, combine near-misses, try radical changes.
 
 ### Crash Recovery
 - If train.py crashes, read the error carefully

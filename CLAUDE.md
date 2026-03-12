@@ -7,12 +7,12 @@ Autonomous training harness inspired by Karpathy's autoresearch. Tree of self-co
 - `tinker/rl/` — GRPO/RL with Tinker SDK (train.py + reward.py + prompts)
 - `tinker/sl/` — SFT with Tinker SDK (train.py + data.jsonl)
 - `prime/` — Prime Intellect hosted RL (environment building + iteration)
-- `lab` — Structured experiment tracking CLI (SQLite-backed, agent-agnostic)
-- `data/` — Experiment database (experiments.db, log.jsonl) — gitignored
+- `lab` — Experiment tracking CLI (5 commands, SQLite, zero deps)
+- `data/` — Experiment database (experiments.db) — gitignored
 - `rules.md` — Universal hard rules from 70+ experiments (22 rules)
 
 ## How it works
-User edits `program.md` Section 1 in a leaf directory with their task description. Agent reads it, builds the setup, then loops forever: hypothesize with mechanism → modify one thing → run → evaluate → confirm/refute mechanism → keep/discard → synthesize every 3-5 experiments. The `lab` CLI provides structured experiment memory across sessions. Each leaf has a `campaign.yaml` (metric config) and `run.sh` (one-command agent launcher).
+User edits `program.md` Section 1 with their task description. Agent reads it, builds the setup, then loops forever: hypothesize with mechanism → modify one thing → run → evaluate → confirm/refute mechanism → keep/discard. The `lab` CLI provides structured experiment memory across sessions.
 
 ## Context
 Research and analysis stored in project memory files:

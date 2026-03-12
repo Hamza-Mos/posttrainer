@@ -66,57 +66,23 @@ export TINKER_API_KEY="your-key-here"
 ```
 LOOP FOREVER:
   1. Reconstruct state: read results.tsv + ../../lab context + ../../lab failures
-  2. Research if needed (search for datasets, read papers, inspect data quality)
-  3. Decide what to try next + form hypothesis — WHY will this lower eval_loss?
+  2. Decide what to try + form hypothesis — WHY will this lower eval_loss?
      Priority: data quality > data quantity > hyperparameters
-       ../../lab hypothesis "what you're changing" \
-         --mechanism "why it should improve loss"
-  4. Modify ONE lever (one change per experiment)
-  5. Validate your change:
-     - If data changed: verify JSONL format, check for quality issues, ensure diversity
-     - If hyperparams changed: verify within safe ranges
-  6. git commit -m "exp: <description of what you changed and why>"
-  7. Run the experiment:
-     python train.py > run.log 2>&1
-     (redirect everything — do NOT use tee or let output flood your context)
-  8. Extract results:
-     grep '^eval_loss:' run.log
-  9. Read the SAMPLE DATA section in run.log (verify data quality)
-  10. Record in results.tsv:
-      <commit> <eval_loss> <keep|discard|crash> <description>
-  11. Log result to lab:
-       ../../lab result <E_ID> -v keep|discard|crash \
-         --metrics '{"eval_loss": 3.42}' \
-         --mechanism-confirmed (or --mechanism-refuted) \
-         --theory-revision "what I learned"
-  12. Decision:
-      - If eval_loss DECREASED (improved) → KEEP
-      - If eval_loss INCREASED or didn't improve → DISCARD: git reset --hard HEAD~1
-      - If crashed → log as "crash", revert, try different approach
-  13. Every 3-5 experiments → synthesize:
-       ../../lab synthesize "what you learned" \
-         --experiments "e1,e2,e3" --decision continue|pivot
+       ../../lab hypothesis "what" -m "why"
+  3. Modify ONE lever → validate → git commit → ../../lab experiment <H_ID>
+  4. Run: python train.py > run.log 2>&1
+  5. Extract: grep '^eval_loss:' run.log
+  6. Read SAMPLE DATA section in run.log (verify data quality)
+  7. Log to results.tsv + ../../lab result <E_ID> -v keep|discard|crash \
+       --metrics '{"eval_loss": X}' --mechanism-confirmed (or --mechanism-refuted) \
+       --theory-revision "what I learned"
+  8. If eval_loss decreased → KEEP. If not → git reset --hard HEAD~1.
   NEVER STOP
 ```
 
-**Research discipline:** Speed without understanding is brute force. Before every experiment, explain WHY in `--mechanism`. After every result, confirm or refute the mechanism. Every 3-5 experiments, synthesize what you learned.
+**Research discipline:** Before every experiment, state WHY (`--mechanism`). After every result, confirm or refute.
 
-**NEVER STOP**: Once the loop begins, do NOT pause to ask the human if you should continue. Do NOT ask "should I keep going?" or "is this a good stopping point?". The human might be asleep, or away from the computer and expects you to continue working *indefinitely* until manually stopped. You are autonomous. If you run out of ideas, think harder — read papers, find better data, try combining approaches. The loop runs until the human interrupts you, period.
-
-### Your Tools
-
-```
-../../lab hypothesis "title" -m "mechanism"              # what + why
-../../lab experiment H_ID --cost 0.50                    # log before running
-../../lab result E_ID -v keep --metrics '{"eval_loss": X}' # log after running
-../../lab insight "learned X" --type observation          # standalone learning
-../../lab direction "name" --theory "why"                 # research thread
-../../lab synthesize "reflection" --decision continue     # periodic reflection
-../../lab context                                         # full history
-../../lab status                                          # budget check
-../../lab best                                            # best result
-../../lab failures                                        # what didn't work
-```
+**NEVER STOP**: Do NOT ask "should I continue?". The human expects you to work *indefinitely* until manually stopped. If you run out of ideas, think harder — read papers, find better data, combine approaches.
 
 ---
 
