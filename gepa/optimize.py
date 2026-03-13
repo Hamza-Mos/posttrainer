@@ -34,7 +34,7 @@ TASK_LM = "openai/gpt-4o-mini"  # older GPT-4o mini, different architecture
 REFLECTION_LM = "openai/gpt-5.4"      # flagship model for better reflection
 
 # Budget
-MAX_METRIC_CALLS = 2000  # exhaustive exploration for 4o-mini
+MAX_METRIC_CALLS = 500  # stage 2: iterative seed from stage 1
 
 # Seed prompt to optimize
 SEED = {
@@ -1002,6 +1002,7 @@ def main():
         max_metric_calls=MAX_METRIC_CALLS,
         use_merge=True,
         display_progress_bar=True,
+        reflection_minibatch_size=5,
     )
 
     # Extract results
