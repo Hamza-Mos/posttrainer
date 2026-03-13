@@ -552,6 +552,64 @@ TRAINSET = [
         "significantly improve GC behavior.",
         "bad"
     ),
+
+    # ---- TRAINING: targeted patterns for val failure modes (8 examples) ----
+
+    # Pattern: absolutist recursion claims (bad)
+    _d(
+        "This recursive method will overflow the stack for large inputs. Java has no tail-call "
+        "optimization and never will — recursion is fundamentally unsafe in Java. The only "
+        "correct approach is to convert every recursive algorithm to an iterative one.",
+        "bad"
+    ),
+    _d(
+        "Recursion here is dangerous because Java's stack is finite and there's absolutely no way "
+        "to make recursive code safe in Java without converting to iteration. The JVM will never "
+        "support TCO, so this is a guaranteed production issue for any non-trivial input size.",
+        "bad"
+    ),
+
+    # Pattern: thread-safety concern without concurrent context (bad)
+    _d(
+        "The `LinkedList` used here is not thread-safe. If another thread modifies it during "
+        "iteration, you'll get `ConcurrentModificationException`. Consider switching to "
+        "`ConcurrentLinkedDeque` as a drop-in replacement.",
+        "bad"
+    ),
+    _d(
+        "The `HashSet` on line 5 isn't synchronized. If this code ever runs in a multi-threaded "
+        "environment, you'll have data races. Wrap it with `Collections.synchronizedSet()` to "
+        "be safe, even if concurrency isn't needed today.",
+        "bad"
+    ),
+
+    # Pattern: pedantic HTTP status (bad)
+    _d(
+        "This endpoint returns 200 OK for a newly created resource. Per HTTP semantics (RFC 9110), "
+        "you should return 201 Created with a Location header pointing to the new resource URL. "
+        "Returning 200 instead of 201 is technically non-compliant.",
+        "bad"
+    ),
+    _d(
+        "The 404 response for an empty search result is incorrect. An empty result set is not "
+        "a 'not found' condition — the endpoint exists and responded. Use 200 with an empty "
+        "array body. This matters for correct REST semantics.",
+        "bad"
+    ),
+
+    # Pattern: suggests fix that introduces new bug (bad)
+    _d(
+        "The date formatting is wrong — `toISOString()` returns UTC time but users expect local. "
+        "Fix it by manually adding the timezone offset: `new Date(date.getTime() + "
+        "date.getTimezoneOffset() * 60000)`. This converts UTC to local without external deps.",
+        "bad"
+    ),
+    _d(
+        "The floating-point comparison `if (price == 9.99)` won't work due to IEEE 754 imprecision. "
+        "Fix this by casting both sides to `int`: `if ((int)price == (int)9.99)`. Integer "
+        "comparison is always exact and avoids the floating-point issue entirely.",
+        "bad"
+    ),
 ]
 
 # --- VALSET: 70 labeled code review examples (35 good, 35 bad) ---
