@@ -998,6 +998,7 @@ def main():
         task_lm=TASK_LM,
         reflection_lm=REFLECTION_LM,
         max_metric_calls=MAX_METRIC_CALLS,
+        use_merge=True,
         display_progress_bar=True,
     )
 
