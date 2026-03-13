@@ -28,3 +28,12 @@ d95d5c9	0.950	discard	hypothetical-scenario rules (e102)
 d95d5c9	0.950	discard	seed=42 (e93)
 d95d5c9	0.940	discard	5-sample avg: even temp=0 varies 0.930-0.950 (e113)
 d95d5c9	0.950	discard	val_evaluation_policy=full_eval (e116)
+572c906	0.970	discard	epsilon_greedy+2000 budget+exact-match (e141) — evolved 0.970 vs seed 0.990
+7ccd7ee	0.960	discard	temp=0 GEPA adapter (e143) — seed 0.960, aligned eval doesn't help
+ffbd0f7	0.992	discard	logit_bias+max_tokens=1 (e144) — identical to baseline
+ffbd0f7	0.829	discard	chain-of-thought (e145) — catastrophic, nano overthinks
+ffbd0f7	0.841	discard	two-pass verification (e146) — verifier too permissive
+ffbd0f7	0.983	discard	nano+mini ensemble, mini tie-breaks (e147) — trades error types
+ffbd0f7	0.992	keep	nano+mini agreement ensemble (e148) — marginal, 2x cost
+ffbd0f7	0.982	discard	nano 2x agreement (e149) — correlated calls
+9585466	0.980	discard	GEPA ensemble adapter (e150) — missing reflection, seed unchanged

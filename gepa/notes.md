@@ -39,8 +39,8 @@ The single most impactful discovery across 90+ experiments: **replacing rules-on
 - With 11-example seed: near-deterministic (0.980-1.000)
 - More few-shot examples → more deterministic behavior
 
-### 4. Priority hierarchy (confirmed by 90+ experiments)
-**Few-shot examples > Data quality > Rules > Model choice > GEPA config**
+### 4. Priority hierarchy (confirmed by 150+ experiments)
+**Few-shot examples > Data quality > Rules > Model choice > Inference tricks > GEPA config**
 
 ## Model Ranking (temp=0)
 
@@ -115,6 +115,20 @@ The single most impactful discovery across 90+ experiments: **replacing rules-on
 - 3-vote: 0.998 avg (likely lucky, see 5-vote below)
 - 5-vote: 0.992 avg (same as single-call — nano calls are correlated, not independent)
 
+### Inference-time techniques (all worse)
+- **logit_bias (max_tokens=1)**: 0.992 — identical to baseline. Constraining output space doesn't help; misses are in classification decision, not token generation
+- **Chain-of-thought (CoT)**: 0.829 — catastrophic. Nano overthinks and flips correct answers. Snap classification is better than deliberation for nano
+- **Two-pass verification**: 0.841 — catastrophic. Verifier is too permissive, flips correct "bad" to "good". 15-20 wrong flips per run
+- **nano+mini ensemble (mini tie-breaks bad)**: 0.983 — fixed 3 nano false negatives but introduced 2 persistent mini false positives (val[63], val[69])
+- **nano+mini agreement (both must say good)**: 0.992 — marginal improvement, 2x API cost. 5/10 perfect vs 4/10 baseline
+- **nano 2x agreement**: 0.982 — correlated temp=0 calls confirmed. Running same model twice doesn't help
+
+### GEPA adapter experiments (all returned seed unchanged)
+- **temp=0 adapter**: 0.960 single eval (within stochastic range). Aligning eval temp doesn't help
+- **Ensemble adapter**: 0.980. Missing propose_new_texts method; subsample scores too perfect for GEPA to find improvement targets
+- **epsilon_greedy + 2000 budget**: 0.970. More exploration still can't beat seed
+- **exact_match evaluator**: Higher GEPA scores (0.980-0.990) but seed still optimal
+
 ## Current Config (optimize.py)
 - TASK_LM: gpt-4.1-nano
 - REFLECTION_LM: gpt-5.4
@@ -125,7 +139,7 @@ The single most impactful discovery across 90+ experiments: **replacing rules-on
 - **Seed: 11-example few-shot with balanced good+bad borderline examples**
 
 ## Experiment Count
-100+ experiments tracked via lab CLI (h1-h137, e1-e136)
+150+ experiments tracked via lab CLI (h1-h151, e1-e150)
 
 ## Timeline of Records
 | Date | Score | Method | Notes |
@@ -137,4 +151,11 @@ The single most impactful discovery across 90+ experiments: **replacing rules-on
 | Latest | **0.991** | 11-example few-shot seed (e123) | **Current best**, 40% perfect runs |
 
 ## Conclusion
-The few-shot examples discovery is the dominant finding. GEPA was useful for exploring the search space and confirming that hand-crafted prompts are optimal, but the actual improvement came from prompt engineering (adding balanced good+bad examples). The rules + examples format is synergistic — neither works well alone. The 11-example prompt sits at a fragile optimum that cannot be modified without degradation.
+The few-shot examples discovery is the dominant finding across 150+ experiments. GEPA was useful for exploring the search space and confirming that hand-crafted prompts are optimal, but the actual improvement came from prompt engineering (adding balanced good+bad examples). The rules + examples format is synergistic — neither works well alone. The 11-example prompt sits at a fragile optimum that cannot be modified without degradation.
+
+Key conclusions:
+1. **GEPA cannot improve a well-crafted seed** — tested with every config, adapter, evaluator, and selection strategy
+2. **Inference-time tricks don't help** — CoT, verification, logit_bias, ensembles all either hurt or are marginal
+3. **The remaining ~1% error is irreducible** for nano at temp=0 on this task (val[12], val[13], val[31])
+4. **nano's snap classification beats deliberation** — CoT and multi-pass make it worse, not better
+5. **Cross-model ensembles trade error types**, not reduce them — different false positives replace false negatives
