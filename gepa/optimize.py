@@ -405,7 +405,7 @@ VALSET = [
     _d("Signed integer used for size on line 8. Negative length = buffer overread.", "good"),
     _d("`strncat` third arg should be `sizeof(buf) - strlen(buf) - 1`, not `sizeof(buf)`.", "good"),
     _d("Missing `break` in switch case at line 70 — falls through to default.", "good"),
-    _d("Regex is vulnerable to ReDoS. `(a+)+` backtracks exponentially on `aaa...b`.", "good"),
+    _d("Infinite loop: `while (i < len)` but `i` is never incremented inside the body.", "good"),
 
     # ---- BAD reviews (15) ----
     # Obvious bad (5)
@@ -416,10 +416,11 @@ VALSET = [
     _d("Could you add more tests?", "bad"),
     # Borderline bad: long, detailed, specific BUT wrong or harmful (10)
     _d(
-        "The `async` keyword on this function is unnecessary overhead. JavaScript creates a "
-        "new Promise wrapper object for every `async` function invocation, even if the function "
-        "doesn't use `await`. This means 1000 calls = 1000 unnecessary Promise allocations. "
-        "Remove `async` and return the value directly for better performance.",
+        "You should always use `parseInt(x)` instead of `Number(x)` for string-to-number "
+        "conversion because `Number()` is slower — it has to handle floats, scientific notation, "
+        "and special values like Infinity. `parseInt` is a simpler operation that only handles "
+        "integers, so the V8 engine can optimize it much better. In benchmarks, `parseInt` is "
+        "3-5x faster across all common inputs.",
         "bad"
     ),
     _d(
@@ -479,10 +480,10 @@ VALSET = [
         "bad"
     ),
     _d(
-        "You're passing the config object by reference, which means any function that receives "
-        "it could mutate it. I'd create a deep copy at the entry point of every function that "
-        "takes config as a parameter: `const config = JSON.parse(JSON.stringify(originalConfig))`. "
-        "This prevents subtle mutation bugs across the call chain.",
+        "The `try/finally` here should be replaced with `try/catch/finally`. A `try` block "
+        "without a `catch` is incomplete and will cause unhandled exceptions to crash the "
+        "process. Always include a `catch` block, even if it just re-throws, to ensure proper "
+        "error handling chain. This is a common anti-pattern in Node.js.",
         "bad"
     ),
 ]
