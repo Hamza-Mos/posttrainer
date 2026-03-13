@@ -107,9 +107,11 @@ The single most impactful discovery across 90+ experiments: **replacing rules-on
 - **Adding 12th example (strncat)**: 0.979 — DEGRADED from 0.991. Fragile optimum at 11 examples
 - **Backtick formatting change**: 0.974 — DEGRADED from 0.991. Even tiny changes cascade
 
-### Seed rule additions (diminishing returns or harmful)
+### Seed rule modifications (Pareto frontier tradeoff)
 - Hypothetical-scenario rules → too restrictive
 - Security-vs-speculative training → diluted focus
+- **Custom reflection evolved prompt (e151)**: 0.987 — Fixed ALL 3 original false negatives (val[12,13,31] → 0 misses!) but introduced persistent val[69] (10/10) and intermittent val[67] (3/10). The evolved rules added "short comments can still qualify" which worked, but relaxed criteria also accepted plausible-but-wrong comments.
+- **Hybrid prompt (e152)**: 0.987 — Combined evolved short-comment rules with wrong-fix guard. val[69] reduced to 5/10 but val[13] worsened to 7/10. **Conclusion: the seed sits at the Pareto-optimal tradeoff. You cannot fix false negatives without creating false positives.**
 
 ### Majority voting
 - 3-vote: 0.998 avg (likely lucky, see 5-vote below)
@@ -139,7 +141,7 @@ The single most impactful discovery across 90+ experiments: **replacing rules-on
 - **Seed: 11-example few-shot with balanced good+bad borderline examples**
 
 ## Experiment Count
-150+ experiments tracked via lab CLI (h1-h151, e1-e150)
+152+ experiments tracked via lab CLI (h1-h153, e1-e152)
 
 ## Timeline of Records
 | Date | Score | Method | Notes |
@@ -159,3 +161,5 @@ Key conclusions:
 3. **The remaining ~1% error is irreducible** for nano at temp=0 on this task (val[12], val[13], val[31])
 4. **nano's snap classification beats deliberation** — CoT and multi-pass make it worse, not better
 5. **Cross-model ensembles trade error types**, not reduce them — different false positives replace false negatives
+6. **The seed is at the Pareto-optimal tradeoff** — relaxing rules to fix false negatives creates false positives (confirmed by e151/e152). You cannot improve one without worsening the other.
+7. **Custom reflection prompts produce better-targeted mutations** — but the mutations still can't beat the seed because the tradeoff is fundamental

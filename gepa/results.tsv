@@ -37,3 +37,5 @@ ffbd0f7	0.983	discard	nano+mini ensemble, mini tie-breaks (e147) — trades erro
 ffbd0f7	0.992	keep	nano+mini agreement ensemble (e148) — marginal, 2x cost
 ffbd0f7	0.982	discard	nano 2x agreement (e149) — correlated calls
 9585466	0.980	discard	GEPA ensemble adapter (e150) — missing reflection, seed unchanged
+9569624	0.987	discard	custom reflection evolved prompt (e151) — fixed FN but introduced FP
+9569624	0.987	discard	hybrid prompt: evolved rules + wrong-fix guard (e152) — Pareto tradeoff
