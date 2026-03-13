@@ -50,11 +50,13 @@ Get your API key from [Tinker](https://tinker.thinkingmachines.ai). See [install
 - Do not install new packages. Only use tinker, torch, and transformers.
 
 ### Before Your First Experiment
-1. **Create an experiment branch** — NEVER work on main/master directly:
+1. **Create a worktree** — NEVER work on main directly:
    ```bash
-   git checkout -b experiment/<short-task-description>
+   REPO=$(git rev-parse --show-toplevel)
+   git worktree add "$REPO/../<experiment-name>" -b experiment/<experiment-name>
+   cd "$REPO/../<experiment-name>/tinker/rl"
    ```
-   All commits, reverts, and mutations happen on this branch. Main stays clean as the starter template.
+   Each worktree is an isolated copy — multiple experiments can run in parallel in separate terminals. Main stays clean as the starter template.
 2. Read `rules.md` — these are hard constraints, not suggestions
 3. Read this entire program.md
 4. Read the task description in Section 1

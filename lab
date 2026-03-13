@@ -14,13 +14,31 @@ Usage (from any leaf directory):
 import argparse
 import json
 import sqlite3
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
 # ── Paths ──
 
 HARNESS_DIR = Path(__file__).resolve().parent
-DB_PATH = HARNESS_DIR / "data" / "experiments.db"
+
+
+def _main_repo_root():
+    """Find the main repo root. In a worktree, points back to the original repo."""
+    try:
+        out = subprocess.check_output(
+            ["git", "rev-parse", "--git-common-dir"],
+            cwd=str(HARNESS_DIR), stderr=subprocess.DEVNULL,
+        ).decode().strip()
+        p = Path(out)
+        if not p.is_absolute():
+            p = (HARNESS_DIR / p).resolve()
+        return p.parent
+    except Exception:
+        return HARNESS_DIR
+
+
+DB_PATH = _main_repo_root() / "data" / "experiments.db"
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS hypotheses (
@@ -68,9 +86,11 @@ def _task_id():
 
 def _get_db():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    db = sqlite3.connect(str(DB_PATH))
+    db = sqlite3.connect(str(DB_PATH), isolation_level=None)
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA foreign_keys = ON")
+    db.execute("PRAGMA journal_mode = WAL")
+    db.execute("PRAGMA busy_timeout = 5000")
     db.executescript(SCHEMA)
     return db
 
@@ -85,6 +105,7 @@ def _next_id(db, table, prefix):
 def cmd_hypothesis(args):
     """Register what you're testing and WHY."""
     db = _get_db()
+    db.execute("BEGIN IMMEDIATE")
     hid = _next_id(db, "hypotheses", "h")
     db.execute(
         "INSERT INTO hypotheses (id, title, mechanism, status, created_at) VALUES (?,?,?,?,?)",
@@ -99,6 +120,7 @@ def cmd_experiment(args):
     """Log an experiment before running it."""
     db = _get_db()
     task_id = _task_id()
+    db.execute("BEGIN IMMEDIATE")
     eid = _next_id(db, "experiments", "e")
     db.execute(
         "INSERT INTO experiments (id, hypothesis_id, task_id, status, created_at) VALUES (?,?,?,?,?)",
@@ -121,6 +143,7 @@ def cmd_result(args):
     elif args.mechanism_refuted:
         mech_val = 0
 
+    db.execute("BEGIN IMMEDIATE")
     db.execute(
         """INSERT INTO results (experiment_id, metrics_json, mechanism_confirmed,
            theory_revision, verdict, created_at) VALUES (?,?,?,?,?,?)

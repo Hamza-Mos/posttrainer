@@ -18,7 +18,13 @@ This is an experiment to have the LLM do its own research, using [autoresearch](
 
 To set up a new experiment:
 
-1. **Create an experiment branch** (never work on main): `git checkout -b experiment/<short-description>`
+1. **Create a worktree** (never work on main):
+   ```bash
+   REPO=$(git rev-parse --show-toplevel)
+   git worktree add "$REPO/../<experiment-name>" -b experiment/<experiment-name>
+   cd "$REPO/../<experiment-name>/pretrain"
+   ```
+   Each worktree is an isolated copy — multiple experiments can run in parallel in separate terminals.
 2. **Read the in-scope files**. The repo is small. Read these files for full context:
    - `../rules.md` — hard constraints from 70+ experiments.
    - `train.py` — the file you modify. Model architecture, optimizer, training loop.
