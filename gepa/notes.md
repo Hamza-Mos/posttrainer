@@ -99,18 +99,29 @@ The single most impactful discovery across 90+ experiments: **replacing rules-on
 ### Model changes (all worse than nano)
 - gpt-4.1: 0.942, gpt-4.1-mini: 0.910, gpt-5-mini: N/A
 
+### Seed architecture experiments
+- **Decision-tree prompt**: 0.754 — nano can't follow sequential yes/no logic
+- **Examples-only (no rules)**: 0.422 — worse than random! Rules provide critical framework
+- **Rules + examples synergy**: 0.991 — neither works well alone, together they're extraordinary
+- **Adding 12th example (strncat)**: 0.979 — DEGRADED from 0.991. Fragile optimum at 11 examples
+- **Backtick formatting change**: 0.974 — DEGRADED from 0.991. Even tiny changes cascade
+
 ### Seed rule additions (diminishing returns or harmful)
 - Hypothetical-scenario rules → too restrictive
 - Security-vs-speculative training → diluted focus
 
+### Majority voting
+- 3-vote: 0.998 avg (likely lucky, see 5-vote below)
+- 5-vote: 0.992 avg (same as single-call — nano calls are correlated, not independent)
+
 ## Current Config (optimize.py)
 - TASK_LM: gpt-4.1-nano
 - REFLECTION_LM: gpt-5.4
-- Budget: 1000 metric calls
-- Selection: epsilon_greedy
+- Budget: 500 metric calls
+- Selection: pareto (default)
 - Train: 98 examples, Val: 100 examples
 - cache_evaluation=True, use_merge=True
 - **Seed: 11-example few-shot with balanced good+bad borderline examples**
 
 ## Experiment Count
-90+ experiments tracked via lab CLI (h1-h124, e1-e123)
+95+ experiments tracked via lab CLI (h1-h135, e1-e134)
