@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 # ============================================================
 
 # Models
-TASK_LM = "openai/gpt-5-nano"           # latest small model, best for classification
+TASK_LM = "openai/gpt-5-mini"           # latest mini model per program.md
 REFLECTION_LM = "openai/gpt-5.4"      # flagship model for better reflection
 
 # Budget
