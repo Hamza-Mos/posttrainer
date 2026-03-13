@@ -1274,7 +1274,6 @@ def main():
         use_merge=True,
         cache_evaluation=True,
         display_progress_bar=True,
-        seed=1,
     )
 
     # Extract results
