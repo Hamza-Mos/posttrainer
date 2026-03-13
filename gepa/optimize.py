@@ -31,10 +31,10 @@ log = logging.getLogger(__name__)
 
 # Models
 TASK_LM = "openai/gpt-4.1-nano"        # weaker model to give GEPA more room
-REFLECTION_LM = "openai/o3"            # reasoning model for more creative reflections
+REFLECTION_LM = "openai/gpt-5.4"      # flagship model for better reflection
 
 # Budget
-MAX_METRIC_CALLS = 500  # stage 2: iterative seed from stage 1
+MAX_METRIC_CALLS = 2000  # high budget + cache for maximum exploration
 
 # Seed prompt to optimize
 SEED = {
@@ -1002,6 +1002,7 @@ def main():
         max_metric_calls=MAX_METRIC_CALLS,
         use_merge=True,
         display_progress_bar=True,
+        cache_evaluation=True,
     )
 
     # Extract results
