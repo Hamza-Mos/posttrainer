@@ -21,6 +21,7 @@ Grep-parsable output:
 import json
 import logging
 import gepa
+from gepa.adapters.default_adapter.default_adapter import EvaluationResult
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)
@@ -30,47 +31,47 @@ log = logging.getLogger(__name__)
 # ============================================================
 
 # Models
-TASK_LM = "openai/gpt-4.1"              # full model with strong seed
+TASK_LM = "openai/gpt-4.1-nano"        # weaker model to give GEPA more room
 REFLECTION_LM = "openai/gpt-5.4"      # flagship model for better reflection
 
 # Budget
 MAX_METRIC_CALLS = 500  # stage 2: iterative seed from stage 1
 
-# Seed prompt to optimize
+
+# Custom evaluator for chain-of-thought: extract last word as label
+class LastWordEvaluator:
+    """Extracts the last word of the response as the classification label."""
+    def __call__(self, data, response: str) -> EvaluationResult:
+        # Extract last word (the label) from CoT response
+        words = response.strip().split()
+        label = words[-1].lower().strip('`*_') if words else ""
+
+        expected = data["answer"].lower()
+        is_correct = label == expected
+
+        if is_correct:
+            feedback = f"Correct: last word '{label}' matches expected '{expected}'"
+        else:
+            feedback = (
+                f"Wrong: last word '{label}', expected '{expected}'. "
+                f"Full response: {response[:200]}"
+            )
+        return EvaluationResult(score=1.0 if is_correct else 0.0, feedback=feedback)
+
+
+# Seed prompt to optimize (chain-of-thought: reason then label)
 SEED = {
     "system_prompt": (
-        "You are performing a strict binary classification task on exactly one code review comment.\n\n"
-        "Output exactly one word: `good` or `bad`. Nothing else.\n\n"
-        "## Core standard\n"
-        "Label `good` only if ALL of these are satisfied:\n"
-        "1. Specific: identifies a concrete issue in the code.\n"
-        "2. Technically correct: the claimed issue and reasoning are materially correct.\n"
-        "3. Actionable: suggests or implies an appropriate fix.\n"
-        "4. Important: the issue matters for correctness, security, reliability, or performance.\n"
-        "5. Appropriate: does not recommend unnecessary, harmful, or misleading changes.\n\n"
-        "If any check fails, output `bad`.\n\n"
-        "## What should be `bad`\n"
-        "- praise, approval, conversational commentary\n"
-        "- vague or generic advice\n"
-        "- style-only, formatting, naming, idioms, conventions\n"
-        "- process or tooling complaints\n"
-        "- speculative, exaggerated, or absolutist claims\n"
-        "- technically incorrect or misleading reasoning\n"
-        "- recommending unnecessary or harmful changes\n"
-        "- pedantic observations where the practical impact is negligible or near-zero\n"
-        "- technically correct observations about issues that have no real-world consequence\n\n"
-        "## Conservative policy\n"
-        "- Prefer `bad` when uncertain.\n"
-        "- Do not reward confidence, detail, or length alone.\n"
-        "- A short comment can be `good` if it identifies a real bug correctly.\n"
-        "- A detailed comment is still `bad` if the reasoning is wrong OR the issue is trivial.\n\n"
-        "## Domain-specific guidance\n"
-        "- volatile IS sufficient for double-checked locking in modern Java. Claiming otherwise is `bad`.\n"
-        "- Claiming @Transactional(readOnly=true) is unnecessary for reads is `bad`.\n"
-        "- Absolutist claims like 'recursion is never safe in Java' are `bad`.\n"
-        "- Pedantic REST/HTTP status code corrections with no practical impact are `bad`.\n"
-        "- Observations about negligible statistical bias (e.g. 1 in 2^53) are `bad`.\n\n"
-        "Return exactly one word: good or bad"
+        "You are classifying a code review comment as good or bad.\n\n"
+        "Think step by step, then output your final answer on the last line.\n\n"
+        "Steps:\n"
+        "1. What issue does the comment claim?\n"
+        "2. Is the claim technically correct?\n"
+        "3. Does it matter for correctness, security, reliability, or performance?\n"
+        "4. Is the suggestion appropriate and actionable?\n\n"
+        "If all steps pass: output good\n"
+        "If any step fails: output bad\n\n"
+        "Keep reasoning brief (1-2 sentences). The last word of your response must be either good or bad."
     )
 }
 
@@ -1002,6 +1003,7 @@ def main():
         max_metric_calls=MAX_METRIC_CALLS,
         use_merge=True,
         display_progress_bar=True,
+        evaluator=LastWordEvaluator(),
     )
 
     # Extract results
