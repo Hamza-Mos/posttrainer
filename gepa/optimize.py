@@ -82,7 +82,7 @@ def _d(input, answer):
     """Create a data instance with required fields."""
     return {"input": input, "answer": answer, "additional_context": {}}
 
-# --- TRAINSET: 110 labeled code review examples (55 good, 55 bad) ---
+# --- TRAINSET: 100 labeled code review examples (50 good, 50 bad) ---
 # Includes borderline cases to break length/surface-level shortcuts
 TRAINSET = [
     # ---- GOOD reviews (35) ----
@@ -549,68 +549,6 @@ TRAINSET = [
         "significantly improve GC behavior.",
         "bad"
     ),
-
-    # ---- TARGETED: performance-with-data (good) and absolutist-mixed (bad) ----
-    # GOOD: performance concern backed by concrete volume data
-    _d(
-        "The `getLogger()` call on every request creates a new Logger instance. At 30k req/sec, "
-        "this generates massive GC pressure. Cache the logger as a class field.",
-        "good"
-    ),
-    _d(
-        "String concatenation in the loop on line 20 creates a new String object each iteration. "
-        "With 100k records from the DB query, this allocates ~100k intermediate strings. "
-        "Use StringBuilder.",
-        "good"
-    ),
-    _d(
-        "The JSON serialization on line 45 is called per-message in the WebSocket handler. "
-        "At 5k messages/sec this is the bottleneck — profile shows 40% of CPU here. "
-        "Pre-serialize the static fields.",
-        "good"
-    ),
-    _d(
-        "The regex on line 12 is compiled inside the loop body. With 200k log lines per batch, "
-        "you're recompiling the same pattern 200k times. Move `re.compile()` outside the loop.",
-        "good"
-    ),
-    _d(
-        "The `indexOf()` scan on the sorted array at line 33 is O(n). This is called once per "
-        "search request (~2k/sec). Binary search would reduce latency from ~5ms to <0.01ms "
-        "for the 500k-element array.",
-        "good"
-    ),
-    # BAD: absolutist claims mixed with real concerns
-    _d(
-        "This HashMap could have hash collisions that degrade to O(n) lookup. The only safe "
-        "option is to use a TreeMap, which guarantees O(log n) worst case. There is absolutely "
-        "no scenario where HashMap is acceptable for production code.",
-        "bad"
-    ),
-    _d(
-        "The exception handling here catches Exception which is too broad. But the fundamental "
-        "problem is that exceptions should never be used for control flow — there's no other "
-        "way to write correct Java than to eliminate all exception-based logic entirely.",
-        "bad"
-    ),
-    _d(
-        "Using mutable state in this class is dangerous. The only correct approach in "
-        "concurrent Java is to make every field final and every object immutable. There is "
-        "no safe way to use mutable objects across threads, period.",
-        "bad"
-    ),
-    _d(
-        "This code uses reflection to call a private method. While it works, reflection "
-        "completely breaks encapsulation and there's no way to make it safe or maintainable. "
-        "The only option is to redesign the API to expose the method publicly.",
-        "bad"
-    ),
-    _d(
-        "Storing session data in memory will fail when you scale to multiple servers. "
-        "You absolutely must use Redis or a database — in-memory sessions are never "
-        "acceptable in any production environment, regardless of scale.",
-        "bad"
-    ),
 ]
 
 # --- VALSET: 70 labeled code review examples (35 good, 35 bad) ---
@@ -1064,6 +1002,7 @@ def main():
         max_metric_calls=MAX_METRIC_CALLS,
         use_merge=True,
         display_progress_bar=True,
+        module_selector="all",
     )
 
     # Extract results
