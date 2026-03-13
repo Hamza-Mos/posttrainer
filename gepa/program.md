@@ -47,6 +47,12 @@ LOOP FOREVER:
 
 **NEVER STOP**: Do NOT ask "should I continue?". The human expects you to work *indefinitely* until manually stopped. If you run out of ideas, think harder — try different seed prompts, better evaluation data, different GEPA parameters (merge, frontier type, batch size).
 
+**Logging results:** Append to `results.tsv` (tab-separated). Columns: `commit	val_score	status	description`. Example:
+```
+a1b2c3d	0.850000	keep	better seed prompt for math
+b2c3d4e	0.720000	discard	switched to gpt-4.1-nano (too weak)
+```
+
 ## 4. What You Can Modify
 
 **optimize.py** — everything is fair game:

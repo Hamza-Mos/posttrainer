@@ -258,6 +258,8 @@ def main():
             logprobs_G_T: list[list[float]] = []
 
             for seq in sample_result.sequences:
+                if not seq.tokens:  # skip empty sequences (e.g., first token was stop)
+                    continue
                 text = tokenizer.decode(seq.tokens, skip_special_tokens=True)
                 reward = compute_reward(text, ground_truth)
                 rewards_G.append(reward)
@@ -266,6 +268,9 @@ def main():
                 logprobs_G_T.append(seq.logprobs)
 
             # GRPO: center rewards within group
+            if not rewards_G:  # all sequences were empty
+                n_skipped += 1
+                continue
             mean_reward = sum(rewards_G) / len(rewards_G)
             advantages_G = [r - mean_reward for r in rewards_G]
             rewards_P.append(mean_reward)
@@ -320,18 +325,20 @@ def main():
                 datums_D, loss_fn=LOSS_FN
             )
             optim_future = training_client.optim_step(adam_params)
-            _fwd_bwd_result = fwd_bwd_future.result()
+            fwd_bwd_result = fwd_bwd_future.result()
             optim_result = optim_future.result()
 
             # Check for loss explosion
+            metrics = fwd_bwd_result.metrics if fwd_bwd_result.metrics else {}
             if optim_result.metrics:
-                for key in ["loss", "train_loss", "total_loss"]:
-                    loss_val = optim_result.metrics.get(key)
-                    if loss_val is not None and loss_val > LOSS_EXPLOSION_THRESHOLD:
-                        logger.error(
-                            f"LOSS EXPLOSION detected: {key}={loss_val:.4f} > {LOSS_EXPLOSION_THRESHOLD}. Aborting."
-                        )
-                        sys.exit(1)
+                metrics.update(optim_result.metrics)
+            for key in ["loss", "train_loss", "total_loss"]:
+                loss_val = metrics.get(key)
+                if loss_val is not None and loss_val > LOSS_EXPLOSION_THRESHOLD:
+                    logger.error(
+                        f"LOSS EXPLOSION detected: {key}={loss_val:.4f} > {LOSS_EXPLOSION_THRESHOLD}. Aborting."
+                    )
+                    sys.exit(1)
         else:
             logger.warning(f"Batch {batch_idx}: No training datums (all groups uniform). Skipping.")
 

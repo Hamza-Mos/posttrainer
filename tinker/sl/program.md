@@ -34,7 +34,7 @@ export TINKER_API_KEY="your-key-here"
 | `data.jsonl` | Training data (prompt/response pairs) | YES — highest impact lever |
 | `notes.md` | Your lab notebook | YES — update after every experiment |
 | `results.tsv` | Experiment log | YES — append, do NOT commit |
-| `../rules.md` | Hard rules | NO — read before every experiment |
+| `../../rules.md` | Hard rules | NO — read before every experiment |
 
 **What you CAN modify:**
 - `data.jsonl` — training data (highest impact lever)
@@ -42,7 +42,7 @@ export TINKER_API_KEY="your-key-here"
 
 **What you CANNOT modify:**
 - `program.md` — read-only. The human edits this, not you.
-- `../rules.md` — read-only. Hard constraints from 70+ experiments.
+- `../../rules.md` — read-only. Hard constraints from 70+ experiments.
 - The Tinker SDK internals. You call the API, you don't modify it.
 - Do not install new packages. Only use tinker, torch, and transformers.
 

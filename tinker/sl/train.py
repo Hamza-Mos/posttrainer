@@ -13,6 +13,7 @@ Dependencies: pip install tinker torch transformers
 
 import json
 import logging
+import math
 import random
 import sys
 import time
@@ -165,6 +166,9 @@ def main():
     n_eval = max(1, int(len(all_data_shuffled) * EVAL_SPLIT))
     eval_data = all_data_shuffled[:n_eval]
     train_data = all_data_shuffled[n_eval:]
+    if not train_data:
+        logger.error("No training data after eval split. Add more examples to data.jsonl.")
+        sys.exit(1)
     logger.info(f"Train: {len(train_data)} examples | Eval: {len(eval_data)} examples")
 
     # Setup Tinker clients
@@ -181,7 +185,7 @@ def main():
 
     # Compute total steps for LR schedule
     effective_batch = min(BATCH_SIZE, len(train_data))
-    n_batches_per_epoch = max(1, len(train_data) // effective_batch)
+    n_batches_per_epoch = max(1, math.ceil(len(train_data) / effective_batch))
     total_steps = n_batches_per_epoch * N_EPOCHS
     logger.info(f"Training for {total_steps} steps ({n_batches_per_epoch} batches/epoch x {N_EPOCHS} epochs)")
 
@@ -241,7 +245,6 @@ def main():
 
             if not datums:
                 logger.warning(f"Step {global_step}: No valid datums. Skipping.")
-                global_step += 1
                 continue
 
             # Training step (pipelined)

@@ -76,8 +76,8 @@ def _get_db():
 
 
 def _next_id(db, table, prefix):
-    row = db.execute(f"SELECT COUNT(*) as cnt FROM {table}").fetchone()
-    return f"{prefix}{row['cnt'] + 1}"
+    row = db.execute(f"SELECT MAX(CAST(SUBSTR(id, 2) AS INTEGER)) as max_n FROM {table}").fetchone()
+    return f"{prefix}{(row['max_n'] or 0) + 1}"
 
 
 # ── Commands ──
@@ -104,7 +104,7 @@ def cmd_experiment(args):
         "INSERT INTO experiments (id, hypothesis_id, task_id, status, created_at) VALUES (?,?,?,?,?)",
         (eid, args.hypothesis, task_id, "running", _now()),
     )
-    db.execute("UPDATE hypotheses SET status = 'testing' WHERE id = ?", (args.hypothesis,))
+    db.execute("UPDATE hypotheses SET status = 'testing' WHERE id = ? AND status = 'proposed'", (args.hypothesis,))
     db.commit()
     db.close()
     print(eid)
@@ -132,11 +132,13 @@ def cmd_result(args):
     )
     db.execute("UPDATE experiments SET status = ? WHERE id = ?", (args.verdict, args.experiment))
 
-    # Update hypothesis status
+    # Update hypothesis status (only promote: proposed → testing → confirmed; never demote)
     row = db.execute("SELECT hypothesis_id FROM experiments WHERE id = ?", (args.experiment,)).fetchone()
     if row:
-        new_status = "confirmed" if args.verdict == "keep" else "rejected" if args.verdict == "discard" else "tested"
-        db.execute("UPDATE hypotheses SET status = ? WHERE id = ?", (new_status, row["hypothesis_id"]))
+        current = db.execute("SELECT status FROM hypotheses WHERE id = ?", (row["hypothesis_id"],)).fetchone()
+        if current and current["status"] != "confirmed":
+            new_status = "confirmed" if args.verdict == "keep" else "tested"
+            db.execute("UPDATE hypotheses SET status = ? WHERE id = ?", (new_status, row["hypothesis_id"]))
 
     db.commit()
     db.close()

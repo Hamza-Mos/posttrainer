@@ -24,3 +24,6 @@ pretrain/uv.lock
 
 # Lab CLI database and logs
 data/
+
+# Personal notes
+experiments.md
