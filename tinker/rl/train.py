@@ -35,7 +35,7 @@ from reward import compute_reward
 # MUTABLE HYPERPARAMETERS — Agent modifies these
 # ============================================================================
 MODEL = "Qwen/Qwen3-8B"                    # Base model to fine-tune
-LORA_RANK = 64                              # Higher rank for more capacity on hard MATH
+LORA_RANK = 32                              # LoRA rank (32 = cookbook default)
 LEARNING_RATE = 4e-5                        # Constant LR (NEVER use cosine, see rules.md)
 BATCH_SIZE = 128                            # Prompts per training batch (>= 128, see rules.md)
 GROUP_SIZE = 32                             # Doubled for better advantage estimates on hard problems
