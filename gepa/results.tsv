@@ -1,1 +1,30 @@
 commit	val_score	status	description
+ffbd0f7	0.991	keep	*** BEST *** 11-example few-shot seed (e123) — 10-sample: 4/10 perfect 1.000!
+2ae6d81	0.980	keep	9-example few-shot seed (e122) — perfectly deterministic
+1994518	0.968	keep	6-example few-shot seed (e121) — first few-shot breakthrough
+ffbd0f7	0.984	keep	gpt-4.1-mini + few-shot seed (e129) — mini jumped +0.074!
+ffbd0f7	0.980	keep	gpt-4.1 + few-shot seed (e128) — deterministic
+8f9f04b	0.948	keep	epsilon_greedy evolved prompt (e118) — first evolved > seed
+ffbd0f7	0.979	discard	12-example seed (e126) — adding strncat DEGRADED (fragile optimum)
+f084a7e	0.974	discard	backtick formatting change (e124) — tiny change DEGRADED
+d95d5c9	0.980	keep	cache_evaluation=True (e96) — best GEPA score, stochastic
+d95d5c9	0.952	baseline	5-sample avg seed prompt with nano (true baseline)
+d95d5c9	0.980	keep	best-of-3 GEPA runs — 98/100 temp=0 (e108)
+d95d5c9	0.980	keep	best-of-5 GEPA runs — confirmed 0.980 achievable (e110)
+d95d5c9	0.960	keep	cleaned val — replaced 2 ambiguous examples (e106)
+e453812	0.970	keep	add 8 targeted training examples (e87)
+703df14	0.960	keep	add style-vs-bug seed guidance (e83)
+857adf2	0.960	keep	expand val set 70→100 (e82)
+d95d5c9	0.942	discard	gpt-4.1 full model — worse than nano (e115)
+d95d5c9	0.910	discard	gpt-4.1-mini — much worse than nano (e117)
+d95d5c9	0.950	discard	module_selector=all (e104)
+d95d5c9	0.950	discard	run_dir persistent state (e100)
+d95d5c9	0.930	discard	reflection_minibatch_size=1 (e101)
+d95d5c9	0.950	discard	evolved 0.980 as seed (e97)
+d95d5c9	0.940	discard	add security training examples (e98)
+d95d5c9	0.000	crash	frontier_type=objective (e99)
+d95d5c9	0.000	crash	frontier_type=cartesian (e103)
+d95d5c9	0.950	discard	hypothetical-scenario rules (e102)
+d95d5c9	0.950	discard	seed=42 (e93)
+d95d5c9	0.940	discard	5-sample avg: even temp=0 varies 0.930-0.950 (e113)
+d95d5c9	0.950	discard	val_evaluation_policy=full_eval (e116)
