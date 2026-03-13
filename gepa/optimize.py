@@ -549,6 +549,71 @@ TRAINSET = [
         "significantly improve GC behavior.",
         "bad"
     ),
+
+    # ---- TRAINING: practical significance judgment (5 good, 5 bad) ----
+    # BAD: technically correct observation but negligible real-world impact
+    _d(
+        "The Fisher-Yates shuffle here uses `Math.random()` which has a period of 2^48. "
+        "For arrays larger than ~170 elements, not all permutations are reachable. Use "
+        "`crypto.getRandomValues()` for a truly unbiased shuffle.",
+        "bad"
+    ),
+    _d(
+        "Returning HTTP 200 for a POST that creates a resource is technically wrong per "
+        "RFC 7231 — it should be 201 Created. REST clients that check status codes "
+        "programmatically may not handle this correctly.",
+        "bad"
+    ),
+    _d(
+        "The `Math.floor(x)` call here introduces a rounding error of up to 0.999... "
+        "for the pixel position. On a 4K display, that's sub-pixel — invisible to the "
+        "user. Use `Math.round(x)` for more accurate positioning.",
+        "bad"
+    ),
+    _d(
+        "This string concatenation in the loop creates O(n) temporary strings. For your "
+        "10-element config array, that's 10 allocations totaling maybe 500 bytes. Use "
+        "StringBuilder for efficiency.",
+        "bad"
+    ),
+    _d(
+        "The `System.nanoTime()` call has platform-dependent resolution — on some Linux "
+        "kernels it's only accurate to ~1μs, not nanoseconds. Since you're measuring "
+        "operations that take 50-200ms, this doesn't affect your benchmarks at all.",
+        "bad"
+    ),
+    # GOOD: similar topic areas but genuinely important impact
+    _d(
+        "The Fisher-Yates shuffle uses `Math.floor(Math.random() * i)` but the index "
+        "calculation is wrong — it should be `Math.floor(Math.random() * (i + 1))`. "
+        "Without the +1, the last element is never swapped into position 0, creating "
+        "a measurable bias in the distribution.",
+        "good"
+    ),
+    _d(
+        "Returning HTTP 200 here but the response body contains `{error: 'not found'}`. "
+        "Clients checking `response.ok` will treat this as success and process the error "
+        "object as valid data. Return 404 with the error body instead.",
+        "good"
+    ),
+    _d(
+        "The rounding on line 15 truncates the tax calculation to 2 decimal places before "
+        "summing line items. With 50 items, the cumulative truncation error can reach $0.49 "
+        "per invoice. Round the total after summing, not each line item.",
+        "good"
+    ),
+    _d(
+        "String concatenation in this loop processes 100k log lines. Each iteration creates "
+        "a new string copy, making this O(n²) in total allocation. With average line length "
+        "of 200 chars, that's ~10GB of garbage. Use a list and join().",
+        "good"
+    ),
+    _d(
+        "The timing measurement uses `Date.now()` which can jump forward or backward during "
+        "NTP adjustments or DST changes. For a rate limiter that resets every 60 seconds, a "
+        "clock jump could lock out all users or let everyone through. Use monotonic time.",
+        "good"
+    ),
 ]
 
 # --- VALSET: 70 labeled code review examples (35 good, 35 bad) ---
@@ -1001,7 +1066,6 @@ def main():
         reflection_lm=REFLECTION_LM,
         max_metric_calls=MAX_METRIC_CALLS,
         use_merge=True,
-        candidate_selection_strategy='epsilon_greedy',
         display_progress_bar=True,
     )
 
