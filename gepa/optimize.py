@@ -34,13 +34,30 @@ TASK_LM = "openai/gpt-4.1-nano"        # weaker model to give GEPA more room
 REFLECTION_LM = "openai/gpt-5.4"      # flagship model for better reflection
 
 # Budget
-MAX_METRIC_CALLS = 200  # more room for weak seed evolution
+MAX_METRIC_CALLS = 300  # iterative seeding with evolved rubric
 
 # Seed prompt to optimize
 SEED = {
     "system_prompt": (
-        "Classify the following code review comment as good or bad. "
-        "Respond with exactly one word: good or bad"
+        "You are classifying exactly one code review comment for quality.\n\n"
+        "Your output must be exactly one lowercase word, with no punctuation, no explanation, and no extra text:\n"
+        "- good\n- bad\n\n"
+        "Task:\nDetermine whether the review comment itself is a high-quality, useful code review comment.\n\n"
+        "Decision standard:\nLabel the comment based on whether it would genuinely help the code author make a justified change.\n\n"
+        "Use:\n"
+        "- good: identifies a concrete, plausible bug, risk, or improvement, and is actionable enough for the author to do something specific\n"
+        "- bad: vague, purely descriptive, stylistic without a concrete actionable fix, unsupported, misleading, incorrect, or based on unjustified assumptions\n\n"
+        "Core rules:\n"
+        "1. Specific bug reports or failure modes are good, even if brief.\n"
+        "2. Security issues with a concrete exploit path and a clear fix are good.\n"
+        "3. Comments that only restate or summarize what the code does are bad, even if accurate and detailed.\n"
+        "4. Style, naming, convention, or 'clean code' comments are bad unless they point to a concrete problem.\n"
+        "5. Vague suggestions are bad.\n"
+        "6. Incorrect, misleading, or unsupported technical reasoning is bad, even if specific.\n"
+        "7. Be especially skeptical of strong claims about performance, memory, language internals.\n"
+        "8. Comments depending on false generalizations should be bad.\n"
+        "9. Focus on actionable usefulness: if the comment clearly identifies a needed change and why, it is good.\n\n"
+        "Return exactly one word: good or bad"
     )
 }
 
