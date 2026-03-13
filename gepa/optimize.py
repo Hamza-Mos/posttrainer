@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 # ============================================================
 
 # Models
-TASK_LM = "openai/gpt-4.1-mini"         # mid-size latest model
+TASK_LM = "openai/gpt-4.1-nano"        # weaker model to give GEPA more room
 REFLECTION_LM = "openai/gpt-5.4"      # flagship model for better reflection
 
 # Budget
