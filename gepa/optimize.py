@@ -30,13 +30,13 @@ log = logging.getLogger(__name__)
 # ============================================================
 
 # Models
-TASK_LM = "openai/gpt-5-mini"           # latest mini model per program.md
+TASK_LM = "openai/gpt-5-nano"           # latest cheapest model
 REFLECTION_LM = "openai/gpt-5.4"      # flagship model for better reflection
 
 # Budget
 MAX_METRIC_CALLS = 500  # stage 2: iterative seed from stage 1
 
-# Seed prompt to optimize (evolved from gpt-5-mini stage 1 — 0.943)
+# Seed prompt to optimize (evolved from gpt-5-mini, adapted for gpt-5 family)
 SEED = {
     "system_prompt": (
         "You are performing a strict binary classification of exactly one code review comment.\n\n"
