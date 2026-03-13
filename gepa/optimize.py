@@ -20,7 +20,18 @@ Grep-parsable output:
 
 import json
 import logging
+from collections import Counter
+from typing import cast
+
 import gepa
+from gepa.adapters.default_adapter.default_adapter import (
+    DefaultAdapter,
+    DefaultDataInst,
+    DefaultRolloutOutput,
+    DefaultTrajectory,
+    EvaluationBatch,
+    EvaluationResult,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)
@@ -34,57 +45,87 @@ TASK_LM = "openai/gpt-4.1-nano"        # weaker model to give GEPA more room
 REFLECTION_LM = "openai/gpt-5.4"      # flagship model for better reflection
 
 # Budget
-MAX_METRIC_CALLS = 500  # stage 2: iterative seed from stage 1
+MAX_METRIC_CALLS = 500
 
-# Seed prompt to optimize (evolved from e55 — GEPA-mutated, structurally different)
+
+class MajorityVoteAdapter(DefaultAdapter):
+    """Calls the task LM 3 times and uses majority vote for each example."""
+
+    def __init__(self, *args, n_votes: int = 3, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.n_votes = n_votes
+
+    def evaluate(
+        self,
+        batch: list[DefaultDataInst],
+        candidate: dict[str, str],
+        capture_traces: bool = False,
+    ) -> EvaluationBatch[DefaultTrajectory, DefaultRolloutOutput]:
+        """Run evaluation n_votes times and take majority vote."""
+        # Collect all votes
+        all_results: list[EvaluationBatch] = []
+        for _ in range(self.n_votes):
+            result = super().evaluate(batch, candidate, capture_traces=capture_traces)
+            all_results.append(result)
+
+        # Majority vote per example
+        outputs: list[DefaultRolloutOutput] = []
+        scores: list[float] = []
+        trajectories: list[DefaultTrajectory] | None = [] if capture_traces else None
+
+        for i in range(len(batch)):
+            # Count votes for correct/incorrect
+            vote_scores = [r.scores[i] for r in all_results]
+            majority_score = 1.0 if sum(vote_scores) > self.n_votes / 2 else 0.0
+
+            # Use the first result's output/trajectory as representative
+            outputs.append(all_results[0].outputs[i])
+            scores.append(majority_score)
+
+            if trajectories is not None and all_results[0].trajectories is not None:
+                trajectories.append(all_results[0].trajectories[i])
+
+        return EvaluationBatch(
+            outputs=outputs,
+            scores=scores,
+            trajectories=trajectories if capture_traces else None,
+            objective_scores=None,
+        )
+
+# Seed prompt to optimize
 SEED = {
     "system_prompt": (
         "You are performing a strict binary classification task on exactly one code review comment.\n\n"
-        "Output exactly one word: good or bad\n"
-        "Do not output punctuation, explanations, or any other text.\n\n"
-        "Task:\n"
-        "Given a single code review comment as input, decide whether it is a high-quality review "
-        "comment that identifies a meaningful issue in the code.\n\n"
-        "Label good only if ALL of the following are true:\n"
-        "1. Specific: it points to a concrete issue in the code, not a vague or general concern.\n"
-        "2. Technically correct: the stated bug, risk, or reasoning is materially correct.\n"
-        "3. Actionable: it suggests or clearly implies a sensible fix.\n"
+        "Output exactly one word: `good` or `bad`. Nothing else.\n\n"
+        "## Core standard\n"
+        "Label `good` only if ALL of these are satisfied:\n"
+        "1. Specific: identifies a concrete issue in the code.\n"
+        "2. Technically correct: the claimed issue and reasoning are materially correct.\n"
+        "3. Actionable: suggests or implies an appropriate fix.\n"
         "4. Important: the issue matters for correctness, security, reliability, or performance.\n"
-        "5. Appropriate: it does not recommend unnecessary, harmful, misleading, or purely stylistic changes.\n\n"
-        "If any criterion is not satisfied, output bad.\n\n"
-        "Use a conservative decision rule:\n"
-        "- Prefer bad when uncertain.\n"
-        "- A brief but precise bug report can still be good if it clearly identifies a real issue and implies a fix.\n\n"
-        "Important guidance from prior examples:\n"
-        "- Comments about language semantics must be judged for technical correctness. For example, a comment "
-        "claiming a finally block should be removed because it executes even on early return is bad unless it "
-        "identifies a real bug with accurate reasoning and an appropriate fix. Simply noting finally executes on "
-        "return and suggesting duplicating cleanup at each exit point is not a good review comment.\n"
-        "- A concise, concrete correctness comment like \"== instead of === on line 15 — coerces null to 0 "
-        "silently.\" should be labeled good, because it identifies a specific bug-risk with an implied fix.\n"
-        "- Pedantic HTTP/REST status code corrections with little practical impact should be labeled bad. "
-        "In particular, claims that a DELETE returning empty body \"must\" use 204 instead of 200, or that "
-        "using 200 will break well-behaved REST clients, are bad.\n\n"
-        "What should be labeled bad:\n"
-        "- praise, approval, or conversational remarks\n"
-        "- vague, generic, or non-specific advice\n"
-        "- style-only comments: formatting, naming, idioms, conventions, readability preferences\n"
+        "5. Appropriate: does not recommend unnecessary, harmful, or misleading changes.\n\n"
+        "If any check fails, output `bad`.\n\n"
+        "## What should be `bad`\n"
+        "- praise, approval, conversational commentary\n"
+        "- vague or generic advice\n"
+        "- style-only, formatting, naming, idioms, conventions\n"
         "- process or tooling complaints\n"
-        "- speculative claims or exaggerated/absolutist statements\n"
-        "- technically incorrect or misleading comments\n"
-        "- recommendations for unnecessary refactors or harmful changes\n"
-        "- pedantic observations with negligible practical impact\n"
-        "- technically correct comments about issues with no real-world consequence\n\n"
-        "Domain-specific rules:\n"
-        "- In modern Java, volatile is sufficient for double-checked locking; claiming otherwise is bad.\n"
-        "- Claiming @Transactional(readOnly=true) is unnecessary for read operations is bad.\n"
-        "- Absolutist claims like \"recursion is never safe in Java\" are bad.\n"
-        "- Pedantic REST/HTTP status code corrections with no practical impact are bad.\n"
-        "- Comments about negligible statistical bias such as 1 in 2^53 are bad.\n\n"
-        "Decision rule:\n"
-        "Output good only for comments that identify a real, meaningful bug or risk and point toward an "
-        "appropriate fix.\n"
-        "Otherwise output bad.\n\n"
+        "- speculative, exaggerated, or absolutist claims\n"
+        "- technically incorrect or misleading reasoning\n"
+        "- recommending unnecessary or harmful changes\n"
+        "- pedantic observations where the practical impact is negligible or near-zero\n"
+        "- technically correct observations about issues that have no real-world consequence\n\n"
+        "## Conservative policy\n"
+        "- Prefer `bad` when uncertain.\n"
+        "- Do not reward confidence, detail, or length alone.\n"
+        "- A short comment can be `good` if it identifies a real bug correctly.\n"
+        "- A detailed comment is still `bad` if the reasoning is wrong OR the issue is trivial.\n\n"
+        "## Domain-specific guidance\n"
+        "- volatile IS sufficient for double-checked locking in modern Java. Claiming otherwise is `bad`.\n"
+        "- Claiming @Transactional(readOnly=true) is unnecessary for reads is `bad`.\n"
+        "- Absolutist claims like 'recursion is never safe in Java' are `bad`.\n"
+        "- Pedantic REST/HTTP status code corrections with no practical impact are `bad`.\n"
+        "- Observations about negligible statistical bias (e.g. 1 in 2^53) are `bad`.\n\n"
         "Return exactly one word: good or bad"
     )
 }
@@ -1008,11 +1049,12 @@ def main():
     log.info(f"Train: {len(TRAINSET)} examples, Val: {len(VALSET)} examples")
     log.info(f"Seed prompt: {SEED['system_prompt'][:100]}...")
 
+    adapter = MajorityVoteAdapter(model=TASK_LM, n_votes=3)
     result = gepa.optimize(
         seed_candidate=SEED,
         trainset=TRAINSET,
         valset=VALSET,
-        task_lm=TASK_LM,
+        adapter=adapter,
         reflection_lm=REFLECTION_LM,
         max_metric_calls=MAX_METRIC_CALLS,
         use_merge=True,
