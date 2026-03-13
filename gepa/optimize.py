@@ -979,6 +979,200 @@ VALSET = [
         "local time to UTC without any library dependencies.",
         "bad"
     ),
+
+    # ---- EXPANDED VAL: 30 more examples (15 good, 15 bad) ----
+
+    # GOOD: real bugs with varied presentation styles
+    _d(
+        "The `PreparedStatement` on line 20 concatenates user input directly into the SQL "
+        "string instead of using `?` placeholders. This is a textbook SQL injection: "
+        "`'; DROP TABLE users; --` will destroy the table. Use parameterized queries.",
+        "good"
+    ),
+    _d(
+        "The `useEffect` cleanup function is missing. When the component unmounts, the "
+        "WebSocket connection stays open and the `onmessage` handler still calls `setState`, "
+        "causing 'Can't perform React state update on unmounted component'. Return a cleanup "
+        "that calls `ws.close()`.",
+        "good"
+    ),
+    _d(
+        "The lock is acquired but the `unlock()` call is outside the `finally` block. If "
+        "`process()` throws, the lock is never released and all other threads deadlock waiting "
+        "for it. Move `lock.unlock()` into `finally`.",
+        "good"
+    ),
+    _d(
+        "`Arrays.asList(primitiveArray)` where `primitiveArray` is `int[]` returns a "
+        "`List<int[]>` with a single element (the whole array), not a `List<Integer>`. "
+        "Use `IntStream.of(arr).boxed().collect(Collectors.toList())` instead.",
+        "good"
+    ),
+    _d(
+        "The `Calendar.getInstance()` on line 5 uses the system default timezone, which "
+        "changes depending on which server handles the request. All date operations should "
+        "use `ZonedDateTime.now(ZoneOffset.UTC)` for consistency.",
+        "good"
+    ),
+    _d(
+        "The JWT token is stored in `localStorage`, which is accessible to any script on "
+        "the same origin. An XSS vulnerability anywhere in the app can steal all tokens. "
+        "Use `httpOnly` cookies instead so JavaScript cannot access the token.",
+        "good"
+    ),
+    _d(
+        "The `SELECT *` in this query returns the user's `password_hash` column to the "
+        "frontend response. Explicitly list the columns you need and exclude sensitive fields.",
+        "good"
+    ),
+    _d(
+        "The `EventEmitter` has no `maxListeners` set and new listeners are added on every "
+        "request. After 10k requests you'll have 10k listeners firing on each event. Call "
+        "`emitter.removeListener()` when the request completes, or use `once()`.",
+        "good"
+    ),
+    _d(
+        "The `BigDecimal` division on line 15 has no `RoundingMode` specified. If the "
+        "result is a non-terminating decimal (e.g., 1/3), it throws `ArithmeticException` "
+        "in production. Use `divide(divisor, scale, RoundingMode.HALF_UP)`.",
+        "good"
+    ),
+    _d(
+        "The `Path.join()` doesn't sanitize `userInput`. If `userInput` is `../../etc/passwd`, "
+        "the joined path escapes the upload directory. Validate that the resolved path starts "
+        "with the expected directory prefix.",
+        "good"
+    ),
+    _d(
+        "Race condition: `if (!cache.containsKey(key)) { cache.put(key, compute()); }` — "
+        "two threads can both pass the check and compute twice. Use `computeIfAbsent()` for "
+        "atomic check-and-set.",
+        "good"
+    ),
+    _d(
+        "The `setInterval` callback captures `staleState` in closure. It will always log "
+        "the initial value, not the current one. Use a ref: `stateRef.current = state` and "
+        "read from the ref in the interval.",
+        "good"
+    ),
+    _d(
+        "The regex `^[a-zA-Z0-9]+$` for email validation rejects all valid emails because "
+        "it doesn't allow `@` or `.`. Use a proper email regex or, better, just check for "
+        "`@` and validate server-side with a confirmation email.",
+        "good"
+    ),
+    _d(
+        "This spawns `child_process.exec(userCommand)` with unsanitized input. An attacker "
+        "can inject `; rm -rf /` after their input. Use `execFile` with an argument array "
+        "instead of shell interpolation.",
+        "good"
+    ),
+    _d(
+        "The `HashMap` is used as a cache accessed by multiple threads but it's not "
+        "synchronized or concurrent. Under contention, `HashMap.put()` can cause an infinite "
+        "loop in the resize logic (pre-Java 8) or data corruption. Use `ConcurrentHashMap`.",
+        "good"
+    ),
+
+    # BAD: varied failure modes for expanded val
+    _d(
+        "The variable names in this function are quite short — `x`, `y`, `tmp`. Consider "
+        "using more descriptive names like `horizontalPosition`, `verticalPosition`, "
+        "`temporaryBuffer` for better readability and self-documenting code.",
+        "bad"
+    ),
+    _d(
+        "This Python function doesn't have a docstring. Per PEP 257, all public functions "
+        "should have a docstring explaining the parameters, return value, and any exceptions. "
+        "Add a proper docstring following Google or NumPy format.",
+        "bad"
+    ),
+    _d(
+        "Looks like a solid implementation. The error handling is thorough, the edge cases "
+        "are covered, and the performance should be good for our use case. I tested it "
+        "locally and everything works. LGTM, let's ship it.",
+        "bad"
+    ),
+    _d(
+        "You should use `Optional.orElseThrow()` instead of `Optional.get()` because "
+        "`get()` will be deprecated in a future version of Java. This is a proactive "
+        "change that will save us from future migration work. It's best practice.",
+        "bad"
+    ),
+    _d(
+        "I'd recommend switching from `HashMap` to `TreeMap` here. `TreeMap` maintains "
+        "insertion order and provides O(log n) lookups, which is more predictable than "
+        "`HashMap`'s amortized O(1) that can degrade to O(n) with hash collisions. "
+        "Predictability is more important than raw speed.",
+        "bad"
+    ),
+    _d(
+        "The method is 45 lines long, which exceeds our team's guideline of 30 lines max "
+        "per method. Consider extracting the validation logic into a separate `validate()` "
+        "method and the transformation logic into `transform()`. Shorter methods are easier "
+        "to test and understand.",
+        "bad"
+    ),
+    _d(
+        "Instead of using `String.format()`, I'd suggest using `MessageFormat.format()` "
+        "for internationalization support. Even though this app isn't currently localized, "
+        "it's good practice to build in i18n support from the start so we don't have to "
+        "retrofit it later.",
+        "bad"
+    ),
+    _d(
+        "The exception message on line 30 says 'Invalid input' which isn't very helpful. "
+        "Consider including the actual value that was invalid, the expected format, and a "
+        "unique error code. Good error messages save hours of debugging in production.",
+        "bad"
+    ),
+    _d(
+        "This endpoint returns a JSON response with `snake_case` field names but our API "
+        "style guide specifies `camelCase`. While both work fine, consistency across "
+        "endpoints makes it easier for frontend developers to work with the API. Please "
+        "update to match the convention.",
+        "bad"
+    ),
+    _d(
+        "The `@Transactional(readOnly=true)` annotation on this read-only repository "
+        "method is unnecessary. Since it's only reading data, there's no transaction to "
+        "manage. Remove it to simplify the code and avoid the overhead of transaction "
+        "management.",
+        "bad"
+    ),
+    _d(
+        "I ran a profiler on this code and the `String.split()` on line 15 allocates "
+        "a new `Pattern` object internally on each call. While this is technically wasteful, "
+        "it's only called once per request and the overhead is ~0.1ms. Probably not worth "
+        "optimizing, but FYI for awareness.",
+        "bad"
+    ),
+    _d(
+        "You could simplify this with Java streams: `list.stream().filter(x -> x > 0)"
+        ".map(x -> x * 2).collect(Collectors.toList())` instead of the for loop. Streams "
+        "are more declarative and idiomatic in modern Java. The performance difference is "
+        "negligible for this list size.",
+        "bad"
+    ),
+    _d(
+        "The indentation is inconsistent — lines 15-20 use tabs while the rest of the file "
+        "uses spaces. Our `.editorconfig` specifies 4 spaces. Please fix the indentation "
+        "before merging to maintain consistency.",
+        "bad"
+    ),
+    _d(
+        "The `catch (Exception e) { log.error(e); throw e; }` pattern is redundant. The "
+        "exception will propagate anyway without the catch block, and the logging is handled "
+        "by our global exception handler. Remove the try-catch to reduce noise.",
+        "bad"
+    ),
+    _d(
+        "While the implementation is correct, I think using the Builder pattern would make "
+        "the object construction on lines 10-25 more readable. With 8 constructor parameters, "
+        "it's hard to remember which argument goes where. A builder with named methods like "
+        "`.withName()` and `.withAge()` would be self-documenting.",
+        "bad"
+    ),
 ]
 
 # ============================================================
