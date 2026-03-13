@@ -74,8 +74,6 @@ SEED = {
         "-> bad (absolutist claim \u2014 'no other option' is exaggerated)\n\n"
         "Comment: \"The catch-rethrow pattern is redundant. Remove the try-catch to reduce noise.\"\n"
         "-> bad (cleanup suggestion, not a defect fix)\n\n"
-        "Comment: \"strncat third arg should be sizeof(buf) - strlen(buf) - 1, not sizeof(buf) \u2014 buffer overflow.\"\n"
-        "-> good (short but identifies a real buffer overflow bug with correct fix)\n\n"
         "Comment: \"Using === for password comparison is vulnerable to timing attacks. "
         "Use crypto.timingSafeEqual() instead.\"\n"
         "-> good (identifies a real security vulnerability with correct fix)\n\n"
