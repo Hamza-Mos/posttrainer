@@ -69,7 +69,10 @@ SEED = {
         "- Claiming @Transactional(readOnly=true) is unnecessary for reads is `bad`.\n"
         "- Absolutist claims like 'recursion is never safe in Java' are `bad`.\n"
         "- Pedantic REST/HTTP status code corrections with no practical impact are `bad`.\n"
-        "- Observations about negligible statistical bias (e.g. 1 in 2^53) are `bad`.\n\n"
+        "- Observations about negligible statistical bias (e.g. 1 in 2^53) are `bad`.\n"
+        "- Suggestions to improve code consistency, reduce redundancy, or clean up patterns are `bad` "
+        "unless they fix an actual defect (crash, data loss, security hole).\n"
+        "- Formatting/indentation complaints are `bad` even when referencing a config standard.\n\n"
         "Return exactly one word: good or bad"
     )
 }
