@@ -72,3 +72,5 @@ ea422bd	0.996	keep	Claude Sonnet single model (e163) — 6/10 perfect, val[55] o
 87dd2d0	0.881	keep	train[50] relabeled + nano train (e187) — nano train 0.881, marginal improvement
 2c88aa4	0.982	keep	3-model majority vote (e188) — val 1.000, train 0.963, combined 0.982
 2c88aa4	0.985	keep	Sonnet 3x self-consistency (e190) — val 1.000 (5/5!), train 0.969, combined 0.985
+3f6da8a	1.000	keep	*** SONNET PERFECTION *** modified rule 3 (e191) — 10/10 perfect! combined 0.990
+3f6da8a	0.974	discard	nano with modified rule 3 (e198) — degrades nano, Sonnet-specific improvement

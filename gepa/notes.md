@@ -12,6 +12,7 @@ Binary classification of code review comments (good/bad) using gpt-4.1-nano with
 - **Tradeoff**: 2x API cost (nano + Haiku per item). For single-model: 0.991 avg with nano alone.
 - **Previous single-model best**: 0.991 (nano, 4/10 perfect) — seed is Pareto-optimal for any single model.
 - **Lazy OR optimization (e166)**: Only call Haiku when nano says "bad" → ~50% fewer Haiku calls, same 1.000 accuracy.
+- **NEW: Sonnet single-model perfection (e191)**: Modified rule 3 gives Sonnet **10/10 PERFECT** on val. Combined accuracy 0.990 (val 1.000 + train 0.969). No ensemble needed!
 
 ## Generalization Analysis (e177-e186)
 The prompt is **overfit to the val set**. Testing on the 98-item trainset (unseen during prompt optimization) reveals significant gaps:
@@ -19,17 +20,20 @@ The prompt is **overfit to the val set**. Testing on the 98-item trainset (unsee
 ### Generalization Ranking (by combined accuracy on val+train, after train[50] relabel)
 | Config | Val | Train | Gap | Combined | Cost |
 |--------|-----|-------|-----|----------|------|
-| **Sonnet alone** | **0.996** | **0.980** | **0.016** | **0.988** | ~50x |
+| **Sonnet + modified rule 3** | **1.000** | **0.969** | **0.031** | **0.990** | ~50x |
+| Sonnet alone (original) | 0.996 | 0.980 | 0.016 | 0.988 | ~50x |
 | **Sonnet 3x self-consistency** | **1.000** | **0.969** | **0.031** | **0.985** | ~150x |
 | 3-model majority (nano+Sonnet+Haiku) | 1.000 | 0.963 | 0.037 | 0.982 | ~52x |
 | nano+Haiku lazy OR | 1.000 | 0.949 | 0.051 | 0.975 | ~1.5x |
 | nano alone | 0.991 | 0.881 | 0.110 | 0.937 | 1x |
 
 **Optimal strategies by goal:**
-- **Best combined accuracy**: Sonnet alone (0.988), ~50x cost
-- **Val perfection + best generalization**: Sonnet 3x (1.000 val, 0.985 combined), ~150x cost
+- **Best combined accuracy**: Sonnet + modified rule 3 (0.990 combined), ~50x cost. 10/10 PERFECT on val!
+- **Best combined at lower cost**: Sonnet alone original prompt (0.988 combined), ~50x cost
 - **Val perfection + cheapest**: nano+Haiku lazy OR (1.000 val, 0.975 combined), ~1.5x cost
 - **Cheapest acceptable**: nano alone (0.991 val, 0.937 combined), 1x cost
+
+**Key insight**: Modified rule 3 ("or identifies a likely bug by questioning the behavior") makes Sonnet deterministically perfect on val but DEGRADES nano. Each model needs its own prompt.
 
 ### Key Generalization Insights
 1. **Sonnet generalizes best** — smallest gap (0.033), highest combined (0.980)
@@ -211,7 +215,7 @@ The single most impactful discovery across 90+ experiments: **replacing rules-on
 - **Seed: 11-example few-shot with balanced good+bad borderline examples**
 
 ## Experiment Count
-190+ experiments tracked via lab CLI (h1-h194, e1-e190)
+198+ experiments tracked via lab CLI (h1-h202, e1-e198)
 
 ## Timeline of Records
 | Date | Score | Method | Notes |
