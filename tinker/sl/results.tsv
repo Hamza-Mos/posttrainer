@@ -64,3 +64,4 @@ a58f91d	0.076	keep	e296: 2ep 4027 traces optimal eval_loss 0.076, MV 88%
 16555b6	0.081	keep	e298: 11th self-distill 4342, MV@5=90% (7th reproduction!)
 8fcadd7	0.070	keep	e302: 12th self-distill, eval_loss 0.070 but MV 82% — too much data!
 2719e92	0.102	keep	sweet spot confirmed: 2548 traces, MV@5=90% (8th reproduction!)
+na	na	discard	e306: Qwen3-8B-Instruct not on Tinker
