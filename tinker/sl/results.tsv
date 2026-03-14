@@ -66,3 +66,4 @@ a58f91d	0.076	keep	e296: 2ep 4027 traces optimal eval_loss 0.076, MV 88%
 2719e92	0.102	keep	sweet spot confirmed: 2548 traces, MV@5=90% (8th reproduction!)
 na	na	discard	e306: Qwen3-8B-Instruct not on Tinker
 0e099c9	na	discard	e307: Llama gated, need HF auth
+na	na	discard	e308: theoretical — Claude seed necessary, base can't bootstrap
