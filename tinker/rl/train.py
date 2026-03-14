@@ -36,10 +36,10 @@ from reward import compute_reward
 # ============================================================================
 MODEL = "Qwen/Qwen3-8B"                    # Base model to fine-tune
 LORA_RANK = 32                              # LoRA rank (32 = cookbook default)
-LEARNING_RATE = 6e-5                        # Slightly higher LR — PPO clipping prevents instability
+LEARNING_RATE = 4e-5                        # Optimal LR (2e-5 too slow, 6e-5 too fast)
 BATCH_SIZE = 128                            # Prompts per training batch (>= 128, see rules.md)
 GROUP_SIZE = 32                             # Doubled for better advantage estimates on hard problems
-MAX_TOKENS = 1024                           # Max response tokens — longer chains for hard MATH
+MAX_TOKENS = 2048                           # Extra room for complex derivations on hardest problems
 TEMPERATURE = 1.0                           # Sampling temperature (1.0 for GRPO, see rules.md)
 N_BATCHES = 50                              # Early stopping — avoid over-training on limited data
 SAVE_EVERY = 10                             # Checkpoint every N batches (0 = disabled)
