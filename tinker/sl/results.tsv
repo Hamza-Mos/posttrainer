@@ -54,3 +54,4 @@ edf0c78	0.114	keep	e273: +325 MATH TEST traces, MV@5=90% (6th reproduction)
 5951f86	0.126	discard	e276: high-temp traces hurt, MV 88% vs 90%
 6520043	0.105	discard	e279: LR=1e-3 2ep, MV 86%, fast but slightly worse
 3348a6e	0.084	keep	e281: eval_loss 0.084 RECORD! MV 88% (noise around 90%)
+7fce4d2	0.083	keep	e282: 8th self-distill 3319 traces, eval_loss 0.083, added auto-resume
