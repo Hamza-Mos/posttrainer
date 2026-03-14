@@ -41,7 +41,7 @@ BATCH_SIZE = 128                            # Prompts per training batch (>= 128
 GROUP_SIZE = 8                              # Reduced to keep compute neutral with 4096-token sequences
 MAX_TOKENS = 4096                           # Longest chains for competition-level math derivations
 TEMPERATURE = 1.0                           # Sampling temperature (1.0 for GRPO, see rules.md)
-N_BATCHES = 50                              # Early stopping — avoid over-training on limited data
+N_BATCHES = 75                              # More batches to extract signal at high skip rates
 SAVE_EVERY = 10                             # Checkpoint every N batches (0 = disabled)
 LOSS_FN = "ppo"                             # PPO: proven best (DRO catastrophically fails)
 
