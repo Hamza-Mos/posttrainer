@@ -35,7 +35,7 @@ MAX_LENGTH = 2048                           # Max sequence length (prompt + resp
 N_EPOCHS = 4                                # Number of passes through the data
 SAVE_EVERY = 20                             # Checkpoint every N batches (0 = disabled)
 EVAL_SPLIT = 0.1                            # Fraction of data held out for eval
-ANSWER_WEIGHT = 3.0                         # Weight multiplier for tokens near \boxed{} answer
+ANSWER_WEIGHT = 1.0                         # Weight multiplier for tokens near \boxed{} answer (1.0 = uniform)
 RESUME_FROM = None                          # Tinker state path to resume from (e.g. "tinker://...weights/step_000020")
 
 # System prompt prepended to all examples (set to None to skip)

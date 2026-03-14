@@ -72,3 +72,4 @@ f78c29e	0.178	keep	e309: 100-trace seed → 78% MV, needs 548 for 90%
 9bd5ff8	0.090	keep	e312: 250 seed + 3 rounds = 88% MV, approaching 90% ceiling
 86f034a	0.080	keep	e315: 250-seed round 4 converges at 88%, can't reach 90%
 e869039	0.094	keep	e317: best-of-5 shortest traces, MV 88%, no improvement
+d75e62a	0.099	keep	e322: answer-weight 3x, MV 90% (9th\! neutral)
