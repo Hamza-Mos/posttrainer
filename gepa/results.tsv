@@ -102,3 +102,4 @@ ab01a30	1.000	discard	Sonnet consistency + escalation (e243) — all items perfe
 26c363c	1.000	keep	extended thinking val+train (e278) — val 1.000 (3/3), train 1.000 (3/3), holdout 0.980
 26c363c	1.000	keep	thinking 5-run holdout (e278) — 4/5 perfect (50/50), avg 0.992, stochastic misses [9,13] in run 5
 26c363c	1.000	keep	*** PERFECTION *** tight thinking holdout (e280) — 50/50 ALL 3 RUNS! max_tokens=1025 prevents over-reasoning
+ffbc37f	0.999	keep	tight thinking 5-run val+train (e284) — val 5/5 perfect, train 4/5 (1 miss train[95] in 990), 99.91% total
