@@ -236,7 +236,7 @@ Prompt cannot be compressed — 11 examples is the minimum for perfection.
 **Key meta-insight**: The classifier has become MORE RELIABLE than the human labeler. When Sonnet disagrees with a label, relabeling to match Sonnet improves accuracy on ALL other items. Opus confirms: holdout[9] (toArray pre-sizing) is genuinely "bad" (micro-optimization). Corrected holdout accuracy: 48/50 = 0.960, with 2 genuinely borderline items.
 
 ## Opus Comparison (e242)
-Opus correctly classifies 2/3 holdout items that Sonnet misses. Confirms the model capability → generalization hierarchy: Opus > Sonnet > nano. But marginal cost is extreme (~100x nano).
+Opus correctly classifies 2/3 holdout items that Sonnet misses (holdout[13,14]). On 10-item sample: 10/10 corrected (only miss is holdout[9] confirmed bad). Model capability hierarchy: **Opus > Sonnet > gpt-5.4 > nano**. But Opus is ~200x nano cost — only worth it for the most critical classifications.
 
 ## Data Quality Audit
 Two mislabeled training examples found via cross-model analysis:
