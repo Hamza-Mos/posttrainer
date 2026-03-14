@@ -68,3 +68,4 @@ na	na	discard	e306: Qwen3-8B-Instruct not on Tinker
 0e099c9	na	discard	e307: Llama gated, need HF auth
 na	na	discard	e308: theoretical — Claude seed necessary, base can't bootstrap
 f78c29e	0.178	keep	e309: 100-trace seed → 78% MV, needs 548 for 90%
+828b6c0	0.160	keep	e310: 250-trace seed → 86% MV, BEATS RL at .50!
