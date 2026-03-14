@@ -219,9 +219,8 @@ def main():
                 state_path = training_client.save_state(name=f"step_{global_step:06d}").result()
                 logger.info(f"Checkpoint saved: {state_path}")
 
-            # Linear LR decay
-            lr_mult = max(0.0, 1.0 - global_step / total_steps)
-            current_lr = LEARNING_RATE * lr_mult
+            # Constant LR (no decay)
+            current_lr = LEARNING_RATE
             adam_params = types.AdamParams(
                 learning_rate=current_lr,
                 beta1=ADAM_BETA1,
