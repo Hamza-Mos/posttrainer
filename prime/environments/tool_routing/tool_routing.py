@@ -495,8 +495,7 @@ SYSTEM_PROMPT = (
 
 def load_environment(**kwargs) -> vf.Environment:
     """Load the tool-routing environment."""
-    rubric = vf.Rubric(funcs=[correctness], weights=[1.0])
-    rubric.add_metric(efficiency)
+    rubric = vf.Rubric(funcs=[correctness, efficiency], weights=[0.7, 0.3])
     rubric.add_metric(tool_call_count)
 
     return vf.ToolEnv(
