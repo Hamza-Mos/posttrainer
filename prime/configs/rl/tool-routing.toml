@@ -4,7 +4,7 @@ batch_size = 128
 rollouts_per_example = 32
 oversampling_factor = 2.5
 max_async_level = 1
-learning_rate = 1e-5
+learning_rate = 5e-6
 lora_alpha = 64
 
 [sampling]
