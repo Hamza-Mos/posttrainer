@@ -129,13 +129,14 @@
 - LoRA rank must be power of 2 (Tinker constraint)
 - Targeted traces: fix one problem, regress another (SFT is fragile)
 
-### 12. Self-Consistency Scaling (final, temp=0.5)
-| Samples | MV | Any Correct |
-|---------|-----|-------------|
-| 5 | **90%** (6/6 reproductions) | 94% |
-| 10 | 88% | 96% |
-| 20 | 90% | 96% |
-| 32 | **92%** | **96%** |
+### 12. Self-Consistency Scaling (final, temp=0.5, 4096 tokens)
+| Samples | MV (2048tok) | MV (4096tok) | Any Correct |
+|---------|-------------|-------------|-------------|
+| 5 | **90%** (9/9 repro) | **90%** | 92-94% |
+| 16 | 92% | **92%** | **96%** |
+| 32 | 92% | — | 96% |
+
+MAX_TOKENS=4096 at eval matches RL's advantage. Both SFT and RL converge at ~90%.
 
 ### 13. The 5 Hard Problems (unsolvable at MV@5)
 - #12 Fibonacci sum: sometimes fixable with targeted data (fragile)
