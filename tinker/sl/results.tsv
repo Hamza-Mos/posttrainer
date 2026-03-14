@@ -51,3 +51,4 @@ ae96e01	0.88ens3	discard	e266: 3-model ensemble worse, correlated errors
 2720785	0.102	keep	e270: 6th self-distill 2548, MV@5=90% (5th reproduction\!)
 edf0c78	0.114	keep	e273: +325 MATH TEST traces, MV@5=90% (6th reproduction)
 043cda5	0.92mv32	keep	scaling: MV@32=92%, any=96%, 2 problems truly unsolvable (geometry)
+5951f86	0.126	discard	e276: high-temp traces hurt, MV 88% vs 90%
