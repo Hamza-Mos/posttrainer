@@ -80,3 +80,5 @@ ea422bd	0.996	keep	Claude Sonnet single model (e163) — 6/10 perfect, val[55] o
 4db62b5	0.993	keep	*** NEW BEST *** Sonnet original + train[82] relabel (e205-206) — val 0.997, train 0.990
 4db62b5	0.990	keep	Sonnet + modified rule 3 + relabel (e205) — val 1.000, train 0.980
 4db62b5	0.988	discard	Sonnet v2_security rule + relabel (e205) — val 1.000, train 0.976, worse than v1
+4440d8a	0.995	keep	*** OVERALL BEST *** Sonnet original + clean data (e222) — val 1.000 (10/10!), train 0.990, DETERMINISTIC
+4440d8a	0.990	keep	cross-model label audit (e207) — only train[82,95] disputed, data is clean

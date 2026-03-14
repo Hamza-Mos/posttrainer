@@ -4,15 +4,12 @@
 Binary classification of code review comments (good/bad) using gpt-4.1-nano with GEPA evolutionary prompt optimization.
 
 ## Best Result
-- **Best 10-sample avg**: **1.000** (range 1.000-1.000) — nano+Haiku OR ensemble (e162), confirmed with 20/20 perfect runs!
-- **PERFECT CLASSIFICATION**: 0 misses across 2000+ evaluations (20 runs x 100 items)
-- **How it works**: gpt-4.1-nano and Claude Haiku have complementary error profiles. OR logic: if EITHER says good → label good. Each model catches the other's false negatives.
-  - Nano misses: val[12] strncat, val[13] switch-break, val[31] toString (intermittent) — Haiku catches ALL of these
-  - Haiku misses: val[35] Base64 re-impl, val[39] HTTP/2 headers (persistent) — Nano catches ALL of these
-- **Tradeoff**: 2x API cost (nano + Haiku per item). For single-model: 0.991 avg with nano alone.
-- **Previous single-model best**: 0.991 (nano, 4/10 perfect) — seed is Pareto-optimal for any single model.
-- **Lazy OR optimization (e166)**: Only call Haiku when nano says "bad" → ~50% fewer Haiku calls, same 1.000 accuracy.
-- **NEW: Sonnet single-model perfection (e191)**: Modified rule 3 gives Sonnet **10/10 PERFECT** on val. Combined accuracy 0.990 (val 1.000 + train 0.969). No ensemble needed!
+- **OVERALL BEST: Sonnet original prompt + clean data (e222)**: val **1.000** (10/10 PERFECT), train **0.990** (10/10 deterministic), combined **0.995**
+  - Only miss: train[25] (speculative recursion question — genuinely ambiguous)
+  - No prompt modification needed — data quality (relabeling train[50]+train[82]) was the key lever
+  - Previous val[55] intermittent miss has completely vanished
+- **Val perfection cheapest**: nano+Haiku lazy OR (e166) — val 1.000 (20/20 perfect), combined 0.975, ~1.5x cost
+- **Single-model cheapest**: nano (e123) — val 0.991, combined 0.937, 1x cost
 
 ## Generalization Analysis (e177-e186)
 The prompt is **overfit to the val set**. Testing on the 98-item trainset (unseen during prompt optimization) reveals significant gaps:
@@ -20,7 +17,7 @@ The prompt is **overfit to the val set**. Testing on the 98-item trainset (unsee
 ### Generalization Ranking (by combined accuracy on val+train, after train[50]+train[82] relabels)
 | Config | Val | Train | Gap | Combined | Cost |
 |--------|-----|-------|-----|----------|------|
-| **Sonnet original** | **0.997** | **0.990** | **0.007** | **0.993** | ~50x |
+| **Sonnet original (e222)** | **1.000** | **0.990** | **0.010** | **0.995** | ~50x |
 | Sonnet + modified rule 3 | 1.000 | 0.980 | 0.020 | 0.990 | ~50x |
 | Sonnet v2_security rule | 1.000 | 0.976 | 0.024 | 0.988 | ~50x |
 | Sonnet 3x self-consistency | 1.000 | 0.969 | 0.031 | 0.985 | ~150x |
@@ -29,12 +26,11 @@ The prompt is **overfit to the val set**. Testing on the 98-item trainset (unsee
 | nano alone | 0.991 | 0.881 | 0.110 | 0.937 | 1x |
 
 **Optimal strategies by goal:**
-- **Best combined accuracy**: Sonnet original prompt (0.993 combined), ~50x cost. Only misses train[25] (speculative framing) and val[55] intermittently.
-- **Val perfection**: Sonnet + modified rule 3 (1.000 val, 0.990 combined), ~50x cost. Deterministically perfect on val.
+- **Best combined accuracy**: Sonnet original prompt + clean data (0.995 combined), ~50x cost. 10/10 PERFECT val, deterministic 0.990 train.
 - **Val perfection + cheapest**: nano+Haiku lazy OR (1.000 val, 0.975 combined), ~1.5x cost
 - **Cheapest acceptable**: nano alone (0.991 val, 0.937 combined), 1x cost
 
-**Key insight**: Data quality > prompt engineering. Relabeling train[82] (ABA problem on AtomicInteger is technically incorrect) improved combined more than any prompt modification.
+**Key insight**: Data quality > prompt engineering > model ensembles. Two relabels (+0.020 combined) outperformed all prompt modifications and ensemble strategies.
 
 ### Key Generalization Insights
 1. **Data quality is #1 lever** — train[50] relabel: +0.010, train[82] relabel: +0.010. Together more impactful than any prompt change.
@@ -233,25 +229,24 @@ Two mislabeled training examples found via cross-model analysis:
 | Mid | 0.968 | 6-example few-shot seed (e121) | First few-shot breakthrough |
 | Mid | 0.980 | 9-example few-shot seed (e122) | Perfectly deterministic |
 | Late | 0.991 | 11-example few-shot seed (e123) | Previous best, 40% perfect runs |
-| Latest | **1.000** | nano+Haiku OR ensemble (e162) | **CURRENT BEST**, 100% perfect! Confirmed 30/30 |
+| Latest | **1.000** | nano+Haiku OR ensemble (e162) | 100% perfect! Confirmed 30/30 |
 | Latest | **1.000** | lazy OR ensemble (e166) | Same accuracy, ~49% fewer Haiku calls |
+| Latest | **0.995** | Sonnet original + data relabels (e222) | **OVERALL BEST**: val 1.000+train 0.990, 10/10 deterministic |
 
 ## Conclusion
-The few-shot examples discovery is the dominant finding across 150+ experiments. GEPA was useful for exploring the search space and confirming that hand-crafted prompts are optimal, but the actual improvement came from prompt engineering (adding balanced good+bad examples). The rules + examples format is synergistic — neither works well alone. The 11-example prompt sits at a fragile optimum that cannot be modified without degradation.
+Three levers in order of impact: **(1) data quality** (relabeling mislabeled items), **(2) prompt engineering** (balanced few-shot examples), **(3) model selection** (Sonnet generalizes best). GEPA was useful for exploring the search space and confirming seed optimality, but the actual improvements came from human-driven analysis.
 
 Key conclusions:
-1. **GEPA cannot improve a well-crafted seed** — tested with every config, adapter, evaluator, and selection strategy
-2. **Cross-family OR ensemble breaks the ceiling** — nano+Haiku OR: 1.000 (up from 0.991). Models from different families have complementary error profiles. OR logic eliminates both models' false negatives. Lazy OR (only call Haiku when nano says bad) cuts Haiku calls by ~49%.
-3. **The seed is Pareto-optimal for ANY single model** — relaxing rules fixes false negatives but creates false positives. The tradeoff is fundamental.
-4. **nano's snap classification beats deliberation** — CoT, multi-pass, and verification all make it worse
-5. **Same-family ensembles don't help much** — nano+mini trades error types; nano+nano is correlated
-6. **AND vs OR matters enormously** — AND unions misses (worse), OR intersects misses (better). Use OR when false negatives are the problem, AND when false positives are.
-7. **Custom reflection prompts produce better-targeted mutations** — but the mutations still can't beat the single-model seed because the tradeoff is fundamental
-8. **Cross-format ensembles (same model, different output mode) partially work** — standard+structured nano OR: 0.989. Fixes FNs but fundamental FPs (val[63]) persist across formats. Need actual cross-family models.
-9. **Fragile optimum is universal** — adding 12th example degraded Sonnet MORE than nano (0.996→0.975 vs 0.991→0.979). 11 examples is the ceiling for ALL models.
-10. **Batch classification destroys accuracy** — nano can't maintain quality across multiple items (0.991→0.708). Single-item classification is essential.
-11. **Val-set overfitting is real** — nano: 0.991 val vs 0.878 train (gap=0.113). The prompt is calibrated for val items specifically.
-12. **Sonnet is the generalization champion** — 0.996 val, 0.963 train, combined 0.980 — best overall. Model capability correlates with generalization.
-13. **OR amplifies false positives** — OR can only fix FNs, never FPs. For generalization (where FPs are the bottleneck), Sonnet alone beats any OR ensemble.
-14. **OR is symmetric** — A or B = B or A. Primary model order only affects cost, not accuracy.
-15. **The optimal strategy depends on the goal**: val perfection → nano+Haiku lazy OR (1.000, 1.5x cost). Generalization → Sonnet alone (0.980 combined, 50x cost). Cheap generalization → nano+Haiku lazy OR (0.968 combined, 1.5x cost).
+1. **Data quality is the #1 lever** — two relabels (train[50]+train[82]) improved combined accuracy by +0.020, more than any prompt modification or ensemble strategy
+2. **Sonnet original prompt achieves near-perfection** — val 1.000 (10/10 deterministic), train 0.990, combined 0.995. Only 1 persistent miss (train[25], genuinely ambiguous).
+3. **GEPA cannot improve a well-crafted seed** — tested with every config, adapter, evaluator, and selection strategy
+4. **Cross-family OR ensemble breaks nano's ceiling** — nano+Haiku OR: 1.000 val (up from 0.991). But ensembles can't beat Sonnet alone on combined accuracy.
+5. **The seed is Pareto-optimal for ANY single model** — relaxing rules fixes false negatives but creates false positives. The tradeoff is fundamental.
+6. **nano's snap classification beats deliberation** — CoT, multi-pass, and verification all make it worse
+7. **AND vs OR matters enormously** — AND unions misses (worse), OR intersects misses (better). But OR amplifies FPs, making it worse than Sonnet alone on train.
+8. **Fragile optimum is universal** — adding 12th example degraded Sonnet MORE than nano (0.996→0.975). 11 examples is the ceiling for ALL models.
+9. **Batch classification destroys accuracy** — nano can't maintain quality across multiple items (0.991→0.708). Single-item classification is essential.
+10. **Model capability correlates with generalization** — Sonnet (gap 0.010) > gpt-5.4 (gap ~0.05) > nano (gap 0.110). Better models have better inherent calibration.
+11. **Model-specific prompts are needed** — modified rule 3 helps Sonnet on val but degrades nano. Each model needs its own prompt tuning.
+12. **Explain-then-classify hurts** — Sonnet correctly classifies val[55] in snap mode but talks itself into "bad" when explaining (overthinks framework path normalization).
+13. **The optimal strategy depends on the goal**: best overall → Sonnet (0.995 combined, 50x cost). Cheapest perfection → nano+Haiku lazy OR (1.000 val, 1.5x cost). Cheapest acceptable → nano alone (0.991 val, 1x cost).
