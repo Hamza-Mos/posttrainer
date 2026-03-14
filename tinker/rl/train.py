@@ -34,7 +34,7 @@ from reward import compute_reward
 # ============================================================================
 # MUTABLE HYPERPARAMETERS — Agent modifies these
 # ============================================================================
-MODEL = "Qwen/Qwen3-8B"                    # Base model to fine-tune
+MODEL = "Qwen/Qwen3-30B-A3B"               # MoE: 30B total, 3B active — efficient + stronger
 LORA_RANK = 32                              # LoRA rank (32 = cookbook default)
 LEARNING_RATE = 4e-5                        # Constant LR (NEVER use cosine, see rules.md)
 BATCH_SIZE = 128                            # Prompts per training batch (>= 128, see rules.md)
