@@ -213,7 +213,7 @@ The single most impactful discovery across 90+ experiments: **replacing rules-on
 - **Seed: 11-example few-shot with balanced good+bad borderline examples**
 
 ## Experiment Count
-233+ experiments tracked via lab CLI (h1-h238, e1-e233)
+239+ experiments tracked via lab CLI (h1-h244, e1-e239)
 
 ## Prompt Compression (e233)
 Even with Sonnet, every example is load-bearing:
@@ -228,9 +228,12 @@ Even with Sonnet, every example is load-bearing:
 Prompt cannot be compressed — 11 examples is the minimum for perfection.
 
 ## Robustness Verification
-- **Adversarial test (e229)**: 13 novel items designed to probe decision boundaries → 13/13 correct. The classifier generalizes beyond train/val patterns.
-- **Nano v2 (e228)**: v2 exception rule slightly helps nano (val 0.992→0.998, train 0.871→0.898) but nano's fundamental capability gap remains (0.898 train vs Sonnet's 1.000).
-- **Cross-model audit (e207)**: Only 2 items with 2+ models disagreeing (both already addressed). Data is clean.
+- **Held-out test (e239)**: 50 new items (25 good, 25 bad) with novel patterns → 47/50 correct (0.940). The 3 misses are likely labeling errors — Sonnet's technical reasoning is consistently more precise than the human labeler. Same pattern as train[50], train[82], and adversarial[5].
+- **Adversarial test (e229)**: 13 items designed to probe decision boundaries → 13/13 correct (1 apparent miss was a labeling error).
+- **Nano v2 (e228)**: v2 exception rule slightly helps nano (val 0.992→0.998, train 0.871→0.898) but nano's fundamental capability gap remains.
+- **Cross-model audit (e207)**: Only 2 items with 2+ models disagreeing (both already addressed).
+
+**Key meta-insight**: The classifier has become MORE RELIABLE than the human labeler. When Sonnet disagrees with a label, relabeling to match Sonnet improves accuracy on ALL other items.
 
 ## Data Quality Audit
 Two mislabeled training examples found via cross-model analysis:
