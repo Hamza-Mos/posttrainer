@@ -78,3 +78,5 @@ c38db70	na	keep	reproducibility: 43,45,44 → avg 89%, 92% was outlier
 be8370e	0.090	discard	e326: curriculum sort neutral, MV 88%
 0a7a483	0.151	discard	e341: MoE 30B-A3B worse (86% vs 90%), active params matter
 da2fe1a	0.116	keep	e344: 1ep batch=64, MV 88% in 40 steps\! Fast learner
+cf0e3aa	0.250	keep	e345: longer traces (3000), MV 86%, no improvement
+cf0e3aa	0.096	keep	e345+: longer Claude + 5 self-distill → 2612 traces, MV 88%
