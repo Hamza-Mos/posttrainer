@@ -31,7 +31,7 @@ LORA_RANK = 32                              # LoRA rank
 LEARNING_RATE = 5e-4                        # Starting LR (linear decay from this)
 BATCH_SIZE = 128                            # Examples per training batch
 MAX_LENGTH = 2048                           # Max sequence length (prompt + response)
-N_EPOCHS = 7                                # Number of passes through the data
+N_EPOCHS = 5                                # Number of passes through the data
 SAVE_EVERY = 20                             # Checkpoint every N batches (0 = disabled)
 EVAL_SPLIT = 0.1                            # Fraction of data held out for eval
 
