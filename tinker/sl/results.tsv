@@ -76,3 +76,4 @@ d75e62a	0.099	keep	e322: answer-weight 3x, MV 90% (9th\! neutral)
 d0c46da	0.084	keep	e324: MV@5=92%! BROKE 90% CEILING! (46/50, first time)
 c38db70	na	keep	reproducibility: 43,45,44 → avg 89%, 92% was outlier
 be8370e	0.090	discard	e326: curriculum sort neutral, MV 88%
+0a7a483	0.151	discard	e341: MoE 30B-A3B worse (86% vs 90%), active params matter
