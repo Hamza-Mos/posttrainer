@@ -48,3 +48,4 @@ e2dff39	0.125	discard	e262: long traces only 88% — full mix is best
 e7abf05	0.92ens	keep	e263: 2-model ensemble MV@10=92%, individuals 90%
 ae96e01	0.88ens3	discard	e266: 3-model ensemble worse, correlated errors
 34e7226	0.108	discard	e268: rank 16, MV 88% slightly below rank 32's 90%
+2720785	0.102	keep	e270: 6th self-distill 2548, MV@5=90% (5th reproduction\!)
