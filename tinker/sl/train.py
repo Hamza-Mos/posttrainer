@@ -27,7 +27,7 @@ from transformers import AutoTokenizer
 # MUTABLE HYPERPARAMETERS — Agent modifies these
 # ============================================================================
 MODEL = "Qwen/Qwen3-8B"                    # Base model to fine-tune
-LORA_RANK = 32                              # LoRA rank
+LORA_RANK = 48                              # LoRA rank
 LEARNING_RATE = 4e-4                        # Starting LR (linear decay from this)
 BATCH_SIZE = 128                            # Examples per training batch
 MAX_LENGTH = 2048                           # Max sequence length (prompt + response)
