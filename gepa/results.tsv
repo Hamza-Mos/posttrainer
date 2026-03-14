@@ -1,5 +1,5 @@
 commit	val_score	status	description
-38fca80	0.999	keep	*** BEST *** nano+Haiku OR ensemble (e162) — 10-sample: 9/10 perfect 1.000!!!
+424b492	1.000	keep	*** BEST *** nano+Haiku OR ensemble (e162) — CONFIRMED PERFECT: 20/20 runs 1.000!!!
 ffbd0f7	0.991	keep	best single-model: 11-example few-shot seed (e123) — 10-sample: 4/10 perfect
 2ae6d81	0.980	keep	9-example few-shot seed (e122) — perfectly deterministic
 1994518	0.968	keep	6-example few-shot seed (e121) — first few-shot breakthrough

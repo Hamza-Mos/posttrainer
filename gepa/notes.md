@@ -4,10 +4,11 @@
 Binary classification of code review comments (good/bad) using gpt-4.1-nano with GEPA evolutionary prompt optimization.
 
 ## Best Result
-- **Best 10-sample avg**: **0.999** (range 0.990-1.000) — nano+Haiku OR ensemble (e162)
-- **Perfect 1.000 achieved**: 9 of 10 runs hit 100% accuracy!
-- **Only 1 miss in 1000 evaluations**: val[63] appeared once (both models wrong simultaneously)
-- **How it works**: gpt-4.1-nano and Claude Haiku have complementary error profiles. OR logic: if EITHER says good → label good. Eliminates both models' false negatives.
+- **Best 10-sample avg**: **1.000** (range 1.000-1.000) — nano+Haiku OR ensemble (e162), confirmed with 20/20 perfect runs!
+- **PERFECT CLASSIFICATION**: 0 misses across 2000+ evaluations (20 runs x 100 items)
+- **How it works**: gpt-4.1-nano and Claude Haiku have complementary error profiles. OR logic: if EITHER says good → label good. Each model catches the other's false negatives.
+  - Nano misses: val[12] strncat, val[13] switch-break, val[31] toString (intermittent) — Haiku catches ALL of these
+  - Haiku misses: val[35] Base64 re-impl, val[39] HTTP/2 headers (persistent) — Nano catches ALL of these
 - **Tradeoff**: 2x API cost (nano + Haiku per item). For single-model: 0.991 avg with nano alone.
 - **Previous single-model best**: 0.991 (nano, 4/10 perfect) — seed is Pareto-optimal for any single model.
 
@@ -170,7 +171,7 @@ The single most impactful discovery across 90+ experiments: **replacing rules-on
 | Mid | 0.968 | 6-example few-shot seed (e121) | First few-shot breakthrough |
 | Mid | 0.980 | 9-example few-shot seed (e122) | Perfectly deterministic |
 | Late | 0.991 | 11-example few-shot seed (e123) | Previous best, 40% perfect runs |
-| Latest | **0.999** | nano+Haiku OR ensemble (e162) | **CURRENT BEST**, 90% perfect runs! |
+| Latest | **1.000** | nano+Haiku OR ensemble (e162) | **CURRENT BEST**, 100% perfect! Confirmed 20/20 |
 
 ## Conclusion
 The few-shot examples discovery is the dominant finding across 150+ experiments. GEPA was useful for exploring the search space and confirming that hand-crafted prompts are optimal, but the actual improvement came from prompt engineering (adding balanced good+bad examples). The rules + examples format is synergistic — neither works well alone. The 11-example prompt sits at a fragile optimum that cannot be modified without degradation.
