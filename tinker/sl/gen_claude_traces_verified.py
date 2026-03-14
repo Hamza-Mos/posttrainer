@@ -97,7 +97,7 @@ def generate_trace(client, problem: str) -> str | None:
     try:
         response = client.messages.create(
             model=MODEL,
-            max_tokens=1500,
+            max_tokens=3000,
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": f"Solve this problem step by step:\n\n{problem}"}],
         )
