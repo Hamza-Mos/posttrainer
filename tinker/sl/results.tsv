@@ -29,3 +29,7 @@ c4f64ef	0.154	keep	e234: GREEDY 88% BEATS RL 83%\! Self-distill + early stop = b
 e57bc51	0.109	keep	e240: 3ep 2148 traces, greedy 80%, MV 86%
 7c72365	0.108	keep	e241: LR=3e-4 2148 traces 5ep, eval_loss 0.108 best, MV 88%
 7c72365	0.92mv@t05	keep	e245: temp sweep, optimal t=0.5 gives MV5 92%
+099d1dd	0.101	keep	e246: 5th self-distill 2548 traces, eval_loss 0.101 but accuracy plateaued
+099d1dd	na	discard	e247: targeted traces failed, verification bug with fractions
+19fd51e	0.100	keep	e248: batch=64, greedy 82%, MV@5 90%
+fd72306	0.154	keep	e249: reproduce e234, eval_loss 0.154 exact, greedy 80% (88%=outlier), MV 88%
