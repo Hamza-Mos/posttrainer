@@ -252,7 +252,7 @@ def main():
                 logger.info(f"Checkpoint saved: {state_path}")
                 # Write .last_checkpoint for auto-resume
                 with open(".last_checkpoint", "w") as f:
-                    f.write(state_path)
+                    f.write(state_path.path)
 
             # Linear LR decay
             lr_mult = max(0.0, 1.0 - global_step / total_steps)
