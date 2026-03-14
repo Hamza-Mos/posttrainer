@@ -84,3 +84,5 @@ ea422bd	0.996	keep	Claude Sonnet single model (e163) — 6/10 perfect, val[55] o
 4440d8a	0.990	keep	cross-model label audit (e207) — only train[82,95] disputed, data is clean
 837fab4	0.999	keep	Sonnet v2 exception rule 5-run (e223) — val 0.998, train 1.000
 837fab4	1.000	keep	*** PERFECTION *** Sonnet v2 exception 10-run (e227) — val 1.000+train 1.000, 20/20 perfect, 0/3960 misses
+36cbd00	0.998	keep	nano v2 exception (e228) — val 0.998, train 0.898, marginal improvement over original
+36cbd00	1.000	keep	adversarial robustness (e229) — 13/13 novel items correct, classifier generalizes

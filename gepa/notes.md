@@ -213,7 +213,12 @@ The single most impactful discovery across 90+ experiments: **replacing rules-on
 - **Seed: 11-example few-shot with balanced good+bad borderline examples**
 
 ## Experiment Count
-227+ experiments tracked via lab CLI (h1-h232, e1-e227)
+229+ experiments tracked via lab CLI (h1-h234, e1-e229)
+
+## Robustness Verification
+- **Adversarial test (e229)**: 13 novel items designed to probe decision boundaries → 13/13 correct. The classifier generalizes beyond train/val patterns.
+- **Nano v2 (e228)**: v2 exception rule slightly helps nano (val 0.992→0.998, train 0.871→0.898) but nano's fundamental capability gap remains (0.898 train vs Sonnet's 1.000).
+- **Cross-model audit (e207)**: Only 2 items with 2+ models disagreeing (both already addressed). Data is clean.
 
 ## Data Quality Audit
 Two mislabeled training examples found via cross-model analysis:
