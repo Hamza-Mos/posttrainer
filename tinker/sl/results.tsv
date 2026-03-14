@@ -40,3 +40,4 @@ b01e4dd	0.154	keep	e252: LR=4e-4 7ep, GREEDY 84% BEATS RL, MV 90%
 0dbecbc	na	discard	e255: rank 48 failed — must be power of 2
 df56e02	0.154	keep	e256: system prompt neutral, greedy 82%, no change
 4019e86	0.154	discard	e257: EVAL_SPLIT 0.2, same results, revert
+722d88e	na	keep	e258: weighted MV +2% (88 vs 86), marginal
