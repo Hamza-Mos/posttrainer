@@ -141,6 +141,8 @@ fc7cd3e	1.000	keep	diverse-prompt majority vote (e350) — val+train 1.000 but d
 7acf9a2	0.980	keep	*** SEVERITY SCALE *** 1-5 rating (e352) — DNS=2, train[95]=2, same boundary. Best threshold=4: 0.980 combined
 7acf9a2	1.000	keep	thinking content analysis (e353) — model deliberates 251 chars on DNS, snap decision on easy items
 7acf9a2	1.000	keep	*** ROOT CAUSE *** DNS miss is factual error in REVIEW (e354) — TTL=-1 claim is wrong, model correctly rejects
+5022f5b	1.000	keep	thinking length distribution (e355) — 99/100 snap (3-4 chars), 1 extended (241 chars val[89] factual), 0 wrong
+5022f5b	0.990	discard	anti-injection defense full test (e357) — fixes adversarial[5] but regresses val[32]+train[95], net -1
 fc7cd3e	1.000	keep	*** PROMPT PLACEMENT *** system is optimal (e342) — user degrades train, split loses train[54]
 fc7cd3e	0.985	discard	multi-turn assistant examples (e343) — val 0.980, train 0.990, in-prompt format strictly better
 fc7cd3e	0.990	discard	decision protocol 6-step (e346) — DNS 3/3 fixed! but train[54,95] broken, same irreducible tradeoff
