@@ -1,0 +1,36 @@
+model = "Qwen/Qwen3-30B-A3B-Instruct-2507"
+max_steps = 200
+batch_size = 128
+rollouts_per_example = 32
+oversampling_factor = 2.5
+max_async_level = 1
+learning_rate = 1e-5
+lora_alpha = 64
+
+[sampling]
+max_tokens = 1024
+
+[[env]]
+id = "tool-routing"
+
+[wandb]
+project = "tool-routing"
+name = "qwen3-30b-a3b-tool-routing-v1"
+
+[eval]
+interval = 50
+eval_base_model = true
+
+[[eval.env]]
+id = "tool-routing"
+num_examples = 50
+rollouts_per_example = 4
+
+[val]
+num_examples = 32
+rollouts_per_example = 1
+interval = 5
+
+[checkpoints]
+interval = 100
+keep_cloud = 5
