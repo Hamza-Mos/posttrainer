@@ -36,7 +36,7 @@ SAVE_EVERY = 20                             # Checkpoint every N batches (0 = di
 EVAL_SPLIT = 0.1                            # Fraction of data held out for eval
 
 # System prompt prepended to all examples (set to None to skip)
-SYSTEM_PROMPT = "Solve math problems step by step. Show all work, verify your answer, and end with \\boxed{answer}."
+SYSTEM_PROMPT = None
 
 # ============================================================================
 # FIXED — Do not modify unless you know what you're doing
