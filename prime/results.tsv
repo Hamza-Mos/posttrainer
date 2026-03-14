@@ -1,1 +1,7 @@
 commit	eval_reward_mean	status	description
+003f48d	0.9041	keep	e194: baseline RL correctness(0.7)+efficiency(0.3), phase transition at step 150, +12.6%
+4db62b5	0.8650	keep	e218: correctness-only reward, phase transition at step 100, +16.9% correctness
+d12de08	0.9294	keep	e224: difficulty filtering, BEST at step 150 (0.9294), 0.9125 at step 200
+bbda3ca	0.7600	crash	e267: binary correctness + filtering = empty buffer crash
+b70064e	0.8219	discard	e275: LR=5e-6 too slow, stalled at step 73
+3d707db	0.9204	keep	e292: partial credit correctness, below e224 best (0.9294)
