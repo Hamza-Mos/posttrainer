@@ -27,3 +27,5 @@ c4f64ef	0.154	keep	e234: GREEDY 88% BEATS RL 83%\! Self-distill + early stop = b
 1bd04f6	0.125	keep	e236: MV5 94%\!\! 1748 traces 5ep, new best, RL+11pts
 8ac13a0	0.110	keep	e238: 4th self-distill 2148, greedy 82%, MV 90%, loss 0.110
 e57bc51	0.109	keep	e240: 3ep 2148 traces, greedy 80%, MV 86%
+7c72365	0.108	keep	e241: LR=3e-4 2148 traces 5ep, eval_loss 0.108 best, MV 88%
+7c72365	0.92mv@t05	keep	e245: temp sweep, optimal t=0.5 gives MV5 92%
