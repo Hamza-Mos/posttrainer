@@ -152,7 +152,29 @@
 - MATH test set traces (same ceiling)
 - Short-only or long-only filtering (both worse)
 
+### 15. Data Quantity Has an Inverted-U Relationship with MV
+| Traces | eval_loss | MV@5 |
+|--------|-----------|------|
+| 548 | 0.258 | 82% |
+| 1348 | 0.154 | 90% |
+| **2548** | **0.102** | **90%** |
+| 4027 | 0.075 | 88% |
+| 4629 | 0.070 | 82% |
+
+Too little: underfitting. Too much: kills output diversity. Sweet spot: ~2500.
+
+### 16. eval_loss and MV Are Inversely Correlated at Extremes
+- LR=2e-4: eval_loss 0.074 (best!) but MV 84% (worst!)
+- LR=4e-4: eval_loss 0.102 but MV 90% (best!)
+- Training "roughness" maintains output diversity for MV
+
+### 17. Claude Seed is Necessary — Self-Distillation Can't Bootstrap
+- Base model: ~15% accuracy → can't generate enough correct traces
+- Claude seed: 548 traces → 82% MV (sufficient to start self-distilling)
+- Self-distillation: amplifies 82% → 90%, doesn't create reasoning from scratch
+- Ablation proved: without Claude seed = 82%, with = 90%
+
 ## Open Questions
 1. Would SFT → RL sequential training exceed both alone?
-2. Does Qwen3.5-14B respond even better to SFT distillation?
-3. Can self-distillation be fully automated (no human seed data)?
+2. Does a larger base model (e.g. 14B) respond better to SFT distillation?
+3. Can a smaller but higher-quality Claude seed (<100 traces) bootstrap effectively?
