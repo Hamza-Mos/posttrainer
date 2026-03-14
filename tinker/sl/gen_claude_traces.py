@@ -26,7 +26,7 @@ if env_path.exists():
 
 MODEL = "claude-sonnet-4-20250514"
 MAX_CONCURRENT = 10
-TARGET = 400  # Generate 400 high-quality traces
+TARGET = 700  # Generate 700 traces (expect ~600 after failures)
 
 SYSTEM_PROMPT = """You are a math tutor solving problems step by step. Your solutions must:
 
