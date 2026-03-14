@@ -57,3 +57,4 @@ edf0c78	0.114	keep	e273: +325 MATH TEST traces, MV@5=90% (6th reproduction)
 7fce4d2	0.083	keep	e282: 8th self-distill 3319 traces, eval_loss 0.083, added auto-resume
 6693ec0	0.081	keep	e283: 9th self-distill 3682 traces, eval_loss 0.081, MV 88%
 eeac849	0.075	keep	e293: 10th self-distill 4027 traces, eval_loss 0.075\! MV 88%
+92cbd36	0.258	keep	e294: ABLATION: Claude-only=82% MV, self-distill=90% (+8pts\!)
