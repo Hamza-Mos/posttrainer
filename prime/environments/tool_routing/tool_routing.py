@@ -464,25 +464,12 @@ def build_dataset(split: str = "train") -> Dataset:
 # ─── Reward Functions ────────────────────────────────────────────────────────
 
 async def correctness(completion, answer) -> float:
-    """1.0 if exact match, 0.5 if close numerical match, 0.0 otherwise."""
+    """1.0 if ground truth answer appears in model's final response."""
     for msg in reversed(completion):
         if msg.get("role") == "assistant" and msg.get("content"):
             response = msg["content"].lower()
             target = answer.strip().lower()
-            # Exact substring match
-            if target in response:
-                return 1.0
-            # Partial credit for close numerical answers
-            try:
-                target_num = float(target.replace(",", ""))
-                numbers = re.findall(r'[-+]?\d*\.?\d+', response)
-                for num_str in numbers:
-                    num = float(num_str)
-                    if target_num != 0 and abs(num - target_num) / abs(target_num) < 0.05:
-                        return 0.5  # within 5% of correct answer
-            except (ValueError, ZeroDivisionError):
-                pass
-            return 0.0
+            return 1.0 if target in response else 0.0
     return 0.0
 
 

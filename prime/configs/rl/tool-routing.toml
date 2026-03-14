@@ -1,7 +1,7 @@
 model = "Qwen/Qwen3-30B-A3B-Instruct-2507"
 max_steps = 200
 batch_size = 128
-rollouts_per_example = 32
+rollouts_per_example = 64
 oversampling_factor = 2.5
 max_async_level = 1
 learning_rate = 1e-5
