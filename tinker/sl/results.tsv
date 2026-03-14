@@ -80,3 +80,4 @@ be8370e	0.090	discard	e326: curriculum sort neutral, MV 88%
 da2fe1a	0.116	keep	e344: 1ep batch=64, MV 88% in 40 steps\! Fast learner
 cf0e3aa	0.250	keep	e345: longer traces (3000), MV 86%, no improvement
 cf0e3aa	0.096	keep	e345+: longer Claude + 5 self-distill → 2612 traces, MV 88%
+33c68f4	0.096	keep	e356: MAX_LENGTH=4096, MV 90% at 4096 eval, 86% at 2048
