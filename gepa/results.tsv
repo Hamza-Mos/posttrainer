@@ -91,3 +91,4 @@ e6ca7da	0.939	discard	nano+Sonnet(v2) lazy OR (e230) — OR FP amplification, tr
 d280e9c	0.985	keep	prompt compression 9/11 examples (e233) — removing 2 examples drops to 0.985 combined
 d280e9c	0.950	keep	prompt compression 1/11 examples (e233) — monotonic degradation, 11 is minimum
 ec9b746	0.940	keep	*** GENERALIZATION *** held-out 50 items (e239) — 47/50, 3 misses likely mislabeled
+d2093df	0.960	keep	Opus holdout analysis (e242) — confirms holdout[9] is bad, corrected 48/50

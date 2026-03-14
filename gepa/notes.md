@@ -213,7 +213,7 @@ The single most impactful discovery across 90+ experiments: **replacing rules-on
 - **Seed: 11-example few-shot with balanced good+bad borderline examples**
 
 ## Experiment Count
-239+ experiments tracked via lab CLI (h1-h244, e1-e239)
+242+ experiments tracked via lab CLI (h1-h247, e1-e242)
 
 ## Prompt Compression (e233)
 Even with Sonnet, every example is load-bearing:
@@ -233,7 +233,10 @@ Prompt cannot be compressed — 11 examples is the minimum for perfection.
 - **Nano v2 (e228)**: v2 exception rule slightly helps nano (val 0.992→0.998, train 0.871→0.898) but nano's fundamental capability gap remains.
 - **Cross-model audit (e207)**: Only 2 items with 2+ models disagreeing (both already addressed).
 
-**Key meta-insight**: The classifier has become MORE RELIABLE than the human labeler. When Sonnet disagrees with a label, relabeling to match Sonnet improves accuracy on ALL other items.
+**Key meta-insight**: The classifier has become MORE RELIABLE than the human labeler. When Sonnet disagrees with a label, relabeling to match Sonnet improves accuracy on ALL other items. Opus confirms: holdout[9] (toArray pre-sizing) is genuinely "bad" (micro-optimization). Corrected holdout accuracy: 48/50 = 0.960, with 2 genuinely borderline items.
+
+## Opus Comparison (e242)
+Opus correctly classifies 2/3 holdout items that Sonnet misses. Confirms the model capability → generalization hierarchy: Opus > Sonnet > nano. But marginal cost is extreme (~100x nano).
 
 ## Data Quality Audit
 Two mislabeled training examples found via cross-model analysis:
