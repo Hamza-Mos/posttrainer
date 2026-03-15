@@ -193,7 +193,7 @@ class CoEvolutionAdapter(GEPAAdapter):
                         {"role": "user", "content": item["input"]},
                     ],
                     temperature=0.3,
-                    max_tokens=800,
+                    max_tokens=1200,
                 )
                 generated = gen_resp.choices[0].message.content
             except Exception as e:
