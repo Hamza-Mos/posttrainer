@@ -206,6 +206,21 @@ LOOP FOREVER:
 
 **NEVER STOP**: Do NOT ask "should I continue?". The human expects you to work *indefinitely* until manually stopped. If you run out of ideas, think harder — read papers, redesign environments, try different reward structures.
 
+### Resume from Best Checkpoint
+When starting a new session or continuing after a crash, resume from the best checkpoint instead of training from scratch:
+1. Check `notes.md` for the best experiment's run ID and checkpoint info
+2. Resume training from a checkpoint in your TOML config:
+   ```toml
+   checkpoint_id = "cp_abc123"     # Resume from this checkpoint
+   ```
+3. Or use the adapter from a previous run as the starting point:
+   ```toml
+   adapter_id = "ad_xyz789"        # Start from this adapter's weights
+   ```
+4. **Always record run IDs and checkpoint IDs** in `notes.md` after good experiments
+5. When changing reward function, start fresh (new weights). When continuing same config or tuning hyperparams, resume from checkpoint.
+6. Check if a crashed run completed on Prime: `prime rl logs <run-id>` — it may have finished server-side even if your terminal died.
+
 ### Pre-Run Validation
 Before every `prime rl run`, validate locally:
 ```bash

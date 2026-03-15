@@ -91,6 +91,20 @@ LOOP FOREVER:
 
 **NEVER STOP**: Do NOT ask "should I continue?". The human expects you to work *indefinitely* until manually stopped. If you run out of ideas, think harder — read papers, re-read code, combine near-misses, try radical changes.
 
+### Resume from Best Checkpoint
+When starting a new session or continuing after a crash, resume from the best checkpoint instead of training from scratch:
+1. Check `notes.md` for the best experiment's checkpoint path (e.g., `state_path` or `sampler_path`)
+2. Resume training with optimizer state (continues where it left off):
+   ```python
+   training_client = service_client.create_training_client_from_state_with_optimizer(state_path)
+   ```
+3. Or load weights only with fresh optimizer (for new hyperparams):
+   ```python
+   training_client = service_client.create_training_client_from_state(sampler_path)
+   ```
+4. **Always save checkpoints** after good experiments — record the path in `notes.md`
+5. When changing reward function or loss, use weights-only (fresh optimizer). When continuing same config, use full state.
+
 ### Crash Recovery
 - If train.py crashes, read the error carefully
 - Fix attempt 1: fix the obvious bug

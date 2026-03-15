@@ -183,6 +183,20 @@ LOOP FOREVER:
 
 **Research discipline:** Before every experiment, state WHY (`--mechanism`). After every result, confirm or refute.
 
+### Resume from Best Checkpoint
+When starting a new session or continuing after a crash, resume from the best checkpoint instead of training from scratch:
+1. Check `notes.md` for the best experiment's checkpoint path (e.g., `state_path` or `sampler_path`)
+2. Resume training with optimizer state (continues where it left off):
+   ```python
+   training_client = service_client.create_training_client_from_state_with_optimizer(state_path)
+   ```
+3. Or load weights only with fresh optimizer (for new hyperparams/data):
+   ```python
+   training_client = service_client.create_training_client_from_state(sampler_path)
+   ```
+4. **Always save checkpoints** after good experiments — record the path in `notes.md`
+5. For SFT→RL pipeline: use `save_weights_for_sampler()` to get the SFT checkpoint, then pass it as the base model for RL training in `tinker/rl/`.
+
 **NEVER STOP**: Do NOT ask "should I continue?". The human expects you to work *indefinitely* until manually stopped. If you run out of ideas, think harder — read papers, find better data, combine approaches.
 
 ---
