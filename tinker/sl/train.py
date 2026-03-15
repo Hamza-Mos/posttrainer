@@ -34,7 +34,7 @@ BATCH_SIZE = 128                            # Examples per training batch
 MAX_LENGTH = 4096                           # Max sequence length (prompt + response)
 N_EPOCHS = 4                                # Number of passes through the data
 SAVE_EVERY = 20                             # Checkpoint every N batches (0 = disabled)
-EVAL_SPLIT = 0.05                           # Fraction of data held out for eval
+EVAL_SPLIT = 0.1                            # Fraction of data held out for eval
 WARMUP_FRACTION = 0.0                       # Fraction of steps for LR warmup (0 = disabled)
 STAGE2_LR = 0                               # LR for final epoch (0 = use main LR schedule)
 STAGE2_FRACTION = 0.0                       # Fraction of total steps for stage 2
