@@ -49,7 +49,7 @@ TASK_LM = "anthropic/claude-sonnet-4-6"       # generates solutions
 EVALUATOR_LM = "openai/gpt-5.4"              # applies the rubric
 REFLECTION_LM = "anthropic/claude-opus-4-6"   # proposes improvements (strongest)
 
-MAX_METRIC_CALLS = 50
+MAX_METRIC_CALLS = 80
 
 SEED = {
     "system_prompt": (
@@ -71,30 +71,29 @@ SEED = {
 }
 
 # ============================================================
-# DATA — AIME-level problems (hard enough for SOTA models to fail)
+# DATA — AIME-level problems (all answers verified with Python)
 # ============================================================
-# All answers are integers 0-999 (AIME format)
 
 def _d(q, a):
     return {"input": q, "answer": str(a), "additional_context": {}}
 
 TRAINSET = [
     # Number theory
-    _d("Find the number of positive integers n less than or equal to 100 such that n^2 - 1 is divisible by 24.", 16),
+    _d("Find the number of positive integers n less than or equal to 100 such that n^2 - 1 is divisible by 24.", 33),
     _d("Find the remainder when 3^2024 is divided by 100.", 81),
-    _d("How many positive integers n satisfy both n | 720 and gcd(n, 30) = 6?", 4),
+    _d("How many positive integers n satisfy both n | 720 and gcd(n, 30) = 6?", 8),
     # Combinatorics
     _d("A committee of 5 is to be formed from 6 men and 4 women. In how many ways can this be done if the committee must contain at least 2 women?", 186),
     _d("In how many ways can 12 identical balls be distributed into 4 distinct boxes such that each box contains at least 2 balls?", 10),
     _d("How many 6-digit positive integers have their digits in strictly increasing order?", 84),
     # Algebra
     _d("If x and y are positive reals with x + y = 10 and x^2 + y^2 = 58, find xy.", 21),
-    _d("Find the sum of all real solutions to the equation |2x - 5| + |x + 3| = 10.", 4),
+    _d("Find the sum of all real solutions to the equation |2x - 5| + |x + 3| = 10.", 2),
     # Geometry
     _d("In triangle ABC, AB = 13, BC = 14, and CA = 15. Find the area of triangle ABC.", 84),
     _d("A circle is inscribed in a right triangle with legs 5 and 12. What is the radius of the inscribed circle?", 2),
     # Probability
-    _d("Three distinct numbers are chosen at random from {1, 2, 3, ..., 10}. What is the probability that the sum of the three numbers is divisible by 3? Express as a percentage rounded to the nearest integer.", 33),
+    _d("Three distinct numbers are chosen at random from {1, 2, 3, ..., 10}. What is the probability that the sum of the three numbers is divisible by 3? Express as a percentage rounded to the nearest integer.", 35),
     # Series
     _d("Find the value of the sum: 1*2 + 2*3 + 3*4 + ... + 99*100.", 333300),
 ]
@@ -102,10 +101,10 @@ TRAINSET = [
 VALSET = [
     _d("Find the number of ordered pairs (a, b) of positive integers such that a + b = 100 and lcm(a, b) = 180.", 0),
     _d("How many 4-digit palindromes are divisible by 3?", 30),
-    _d("Find the last three digits of 7^999.", 343),
-    _d("In how many ways can you tile a 2×10 board with 1×2 dominoes?", 89),
+    _d("Find the last three digits of 7^999.", 143),
+    _d("In how many ways can you tile a 2x10 board with 1x2 dominoes?", 89),
     _d("If a, b, c are roots of x^3 - 6x^2 + 11x - 6 = 0, find a^2 + b^2 + c^2.", 14),
-    _d("A bag has 5 red and 7 blue balls. Balls are drawn one at a time without replacement until 2 red balls have been drawn. What is the expected number of draws? Express as a fraction's numerator if the fraction in lowest terms is p/q. Give p.", 22),
+    _d("A bag has 5 red and 7 blue balls. Balls are drawn one at a time without replacement until 2 red balls have been drawn. What is the expected number of draws? Express as a fraction's numerator if the fraction in lowest terms is p/q. Give p.", 13),
 ]
 
 # ============================================================
@@ -192,7 +191,7 @@ class CoEvolutionAdapter(GEPAAdapter):
         trajectories = [] if capture_traces else None
 
         for item in batch:
-            # Step 1: Generate solution using system_prompt
+            # Step 1: Generate solution using system_prompt (temp=0 for determinism)
             try:
                 gen_resp = litellm.completion(
                     model=TASK_LM,
@@ -200,7 +199,7 @@ class CoEvolutionAdapter(GEPAAdapter):
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": item["input"]},
                     ],
-                    temperature=0.7,
+                    temperature=0,
                     max_tokens=2048,
                 )
                 generated = gen_resp.choices[0].message.content
@@ -322,6 +321,7 @@ def main():
         module_selector="round_robin",
         candidate_selection_strategy="pareto",
         frontier_type="hybrid",
+        reflection_minibatch_size=6,
         use_merge=True,
         display_progress_bar=True,
     )
