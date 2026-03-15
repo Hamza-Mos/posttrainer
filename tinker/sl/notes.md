@@ -203,6 +203,24 @@ Non-monotonic — 4 epochs is genuinely optimal. The slight eval_loss rise in ep
 - 2548 traces: 88% MV, 3003 optimal (sweet spot shifts with config)
 - 3403 traces: 87% MV, more data STILL kills diversity
 - Temp 0.3-0.5: all in optimal range for LR=6e-4 (flat curve)
+- ADAM_BETA2=0.99: worse (90% MV), cookbook's 0.95 is correct
+- ADAM_BETA1=0.85: best greedy (88%) but chaotic MV (94/86 variance)
+- Warmup (10%): smooths epoch 2 spike but HURTS MV (92% < 93.3%)
+- Two-stage LR (3ep@6e-4 + 1ep@2e-4): consistent 92% but below 93.3%
+- Seed 123 vs 42: robust (94.7% vs 93.3% MV@5, within noise)
+- 2-seed ensemble: MV@10=94%, MV@16=96% (same as single model)
+
+### 21. Key Insight: Training Roughness is the Mechanism
+The dominant finding across all experiments is that **training roughness preserves output diversity for majority voting**:
+- Higher LR (6e-4 > 4e-4): more rough → better MV
+- But too high (7e-4): too rough → worse
+- Lower beta1 (0.85): extreme roughness → best greedy but chaotic MV
+- Lower beta2 (0.99): too smooth → worse MV
+- Warmup: smooths initial spike → worse MV
+- Two-stage: smooth ending → worse MV
+- Epoch 2 spike: initially LOOKS like a problem but IS the mechanism
+
+The optimal config walks a razor's edge: rough enough for diversity, smooth enough for consistency.
 
 ## Current Best Configuration
 **LR=6e-4, N_EPOCHS=4, BATCH_SIZE=128, MAX_LENGTH=4096, LORA_RANK=32, 3003 traces**
