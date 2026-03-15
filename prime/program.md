@@ -6,16 +6,109 @@ This program is inspired by [Karpathy's autoresearch](https://github.com/karpath
 
 ---
 
-## 1. Task Description (FILL THIS IN)
+## 1. Task Description
 
 **Model**: Qwen/Qwen3-30B-A3B-Instruct-2507
-**Task**: [Describe what agent behavior you want to train]
-**Environment type**: [SingleTurnEnv | MultiTurnEnv | ToolEnv | StatefulToolEnv | SandboxEnv | CodeEnv]
-**What "good" looks like**: [Describe ideal agent behavior in detail]
+**Task**: Tool routing emergence — learn to answer multi-domain questions using the MINIMUM number of tool calls. 6 tools available, some deliberately redundant. The model must discover which tool is optimal for each question type, purely from reward signal.
+**Environment type**: ToolEnv
+**What "good" looks like**: The model routes each question to the optimal 1-2 tools instead of trying all 6. It develops specialization: `calculator` for arithmetic, `wikipedia_lookup` for factual recall, `python_eval` for complex computation, `unit_converter` for conversions. It avoids redundant calls (e.g., not calling both `calculator` AND `wolfram_alpha` for simple math). Correct answers with minimal tool calls.
 **Primary metric**: eval_reward_mean (higher = better)
-**Cost budget**: Stop if total Prime compute cost exceeds $X for this session.
+**Cost budget**: Stop if total Prime compute cost exceeds $0 for this session (free during beta).
 
-> **User: Replace this section with your actual task before starting the agent.** Describe the task, the agent behavior you want, and what environment type fits. Be specific — the agent builds the entire environment from this description.
+### Tools to Implement
+
+| Tool | Purpose | Redundant With |
+|------|---------|---------------|
+| `web_search(query)` | General web search | `wikipedia_lookup` (for factual Qs) |
+| `wikipedia_lookup(topic)` | Factual knowledge | `web_search` |
+| `calculator(expression)` | Arithmetic | `wolfram_alpha`, `python_eval` |
+| `unit_converter(value, from_unit, to_unit)` | Unit conversion | `wolfram_alpha`, `python_eval` |
+| `wolfram_alpha(query)` | Math + science queries | `calculator`, `python_eval` |
+| `python_eval(code)` | Run arbitrary Python | `calculator`, `wolfram_alpha` |
+
+### Reward Design
+
+```python
+import math
+
+async def correctness(completion, answer) -> float:
+    """1.0 if answer matches ground truth, 0.0 otherwise."""
+    response = completion[-1]["content"]
+    return 1.0 if answer.strip().lower() in response.lower() else 0.0
+
+async def efficiency(completion) -> float:
+    """Penalize unnecessary tool calls: 1/sqrt(n_calls)."""
+    n_calls = sum(1 for m in completion if m.get("role") == "tool")
+    return 1.0 / math.sqrt(max(1, n_calls))
+
+# Observable metrics (weight=0, logged but NOT rewarded)
+async def tool_call_count(completion) -> float:
+    """Track avg tool calls per question."""
+    return float(sum(1 for m in completion if m.get("role") == "tool"))
+
+async def per_tool_usage(completion, state) -> float:
+    """Track which tools are called (for routing analysis)."""
+    calls = [m.get("name", "") for m in completion if m.get("role") == "assistant" and m.get("tool_calls")]
+    state["tool_names"] = calls
+    return 0.0  # just for logging
+
+rubric = vf.Rubric(
+    funcs=[correctness, efficiency],
+    weights=[0.7, 0.3],
+)
+rubric.add_metric(tool_call_count)
+```
+
+### Question Categories (build 200 train + 50 eval)
+
+| Category | Optimal Tool(s) | Calls | Example |
+|----------|-----------------|-------|---------|
+| Pure arithmetic | `calculator` | 1 | "What is 847 × 293?" |
+| Factual recall | `wikipedia_lookup` | 1 | "What is the capital of Mongolia?" |
+| Unit conversion | `unit_converter` | 1 | "Convert 72°F to Celsius" |
+| Complex computation | `python_eval` | 1 | "Sum of first 100 primes?" |
+| Fact + calculation | 2 tools | 2 | "GDP per capita of Japan in EUR?" |
+| Multi-step mixed | 2-3 tools | 2-3 | "How many football fields fit in Central Park?" |
+
+Aim for roughly equal distribution across categories. Include "distractor" questions where no tool is needed (answer from parametric knowledge) to test if the model learns to skip tools entirely when appropriate.
+
+### Debugging & Analysis
+
+```bash
+# ── Monitoring ──────────────────────────────────────────────
+prime rl logs <run-id> -f                        # stream training logs
+prime eval run tool-routing -m Qwen/Qwen3-30B-A3B-Instruct-2507 -n 20  # quick baseline eval
+prime eval tui                                    # interactive eval dashboard
+
+# ── Key Signals ─────────────────────────────────────────────
+# ✅ GOOD: avg tool_call_count DECREASING over steps → routing improving
+# ✅ GOOD: eval_reward_mean INCREASING → correctness maintained + efficiency up
+# ✅ GOOD: per-tool counts showing SPECIALIZATION → not uniform usage
+# ✅ GOOD: some questions answered with 0 tool calls → learned parametric routing
+#
+# 🚨 BAD: correctness dropping while efficiency improves → model skipping needed tools
+#    → FIX: increase correctness weight from 0.7 to 0.85, reduce efficiency to 0.15
+# 🚨 BAD: avg tool calls stuck at 1.0 from the start → model ignoring most tools
+#    → FIX: check tool implementations return useful results, reduce efficiency weight
+# 🚨 BAD: one tool dominating ALL calls → degenerate routing
+#    → FIX: inspect which tool — if python_eval dominates, it may be the "universal" tool
+#           Consider adding latency simulation to make some tools "faster"
+# 🚨 BAD: eval_reward_mean flat → no learning signal
+#    → FIX: check baseline correctness. If 0%, questions too hard. If >80%, too easy.
+
+# ── Analyzing Routing Patterns ──────────────────────────────
+# After each eval, inspect the routing decisions in logs:
+# 1. For arithmetic Qs: does the model pick calculator over wolfram_alpha?
+# 2. For factual Qs: does it pick wikipedia over web_search?
+# 3. For multi-step Qs: does it chain 2 tools or try 4?
+# 4. For trivial Qs: does it answer directly without tools?
+```
+
+### Key Experiment Questions
+1. Does the model discover tool specialization purely from reward signal?
+2. Which tools does it learn to prefer per question type? (the routing table is a research artifact)
+3. Does efficiency training hurt correctness? (track Pareto frontier)
+4. How many RL steps before routing patterns emerge? (phase transition?)
 
 ---
 

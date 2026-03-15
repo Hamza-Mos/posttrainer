@@ -4,11 +4,29 @@ Autonomous prompt optimization using [GEPA](https://github.com/gepa-ai/gepa) (Ge
 
 ## 1. Task Description
 
-**What to optimize**: Evaluation rubric that scores code review quality (0-1). The rubric itself is the text artifact being evolved — not a prompt for a model, but criteria for judging whether a code review is thorough, actionable, and catches real bugs vs. rubber-stamp/vague.
+**What to optimize**: Co-evolve TWO text artifacts simultaneously using GEPA multi-module optimization:
+1. **System prompt** — instructs a generator LLM to produce long-form outputs (research summaries, technical analyses, code explanations)
+2. **Evaluation rubric** — instructs an evaluator LLM to score those outputs (criteria, weighting, positive/negative rubric items)
 
-**Task LM**: `openai/gpt-5-mini` (applies the rubric to score reviews)
+Inspired by DR. TULU's RLER (Reinforcement Learning with Evolving Rubrics), but using GEPA co-evolutionary prompt optimization instead of RL. The system prompt and rubric evolve together — the prompt adapts to produce better outputs, the rubric adapts to better capture quality. Both improve via GEPA's Pareto-efficient search.
 
-**Evaluation data**: 100 GitHub PR reviews labeled binary (50 good, 50 bad). Good = catches bugs, provides actionable suggestions, references specific lines. Bad = "LGTM", vague comments, incorrect suggestions. Train: 70, Val: 30. Metric: discrimination accuracy (% correctly classified as good/bad using the evolved rubric).
+**Key ideas from DR. TULU:**
+- Positive rubrics (reward newly discovered good patterns) + negative rubrics (penalize failure modes)
+- Rubrics that discover NEW quality dimensions not in the original criteria
+- Instance-adaptive scoring — rubric handles diverse item types
+
+**Task LM (generator)**: `openai/gpt-5.4` or `anthropic/claude-sonnet-4-6` (produces long-form outputs)
+**Evaluator LM (rubric applier)**: `openai/gpt-5.4` or `anthropic/claude-sonnet-4-6` (scores outputs using evolved rubric)
+**Reflection LM**: `anthropic/claude-opus-4-6` or `openai/gpt-5.4` (proposes GEPA mutations — stronger = better)
+
+**Latest model IDs** (use these, not older versions):
+- `anthropic/claude-opus-4-6` — strongest reasoning
+- `anthropic/claude-sonnet-4-6` — best quality/cost tradeoff
+- `anthropic/claude-haiku-4-5` — fastest/cheapest Anthropic
+- `openai/gpt-5.4` — strongest OpenAI
+- `openai/gpt-4.1-nano` — cheapest OpenAI
+
+**Evaluation data**: Choose an open-ended evaluation task with human preference labels (e.g., MT-Bench, AlpacaEval, or build a small custom dataset). Meta-metric: rubric's agreement with human preference labels (higher = rubric captures real quality).
 
 ## 2. Setup
 

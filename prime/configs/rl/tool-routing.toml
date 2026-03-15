@@ -13,11 +13,9 @@ max_tokens = 1024
 [[env]]
 id = "salesbench/tool-routing"
 
-env_file = ["../.env"]
-
-[wandb]
-project = "tool-routing"
-name = "e351-lora128-filter-64r"
+# [wandb]
+# project = "tool-routing"
+# name = "e351-lora128-filter-64r"
 
 [eval]
 interval = 50
