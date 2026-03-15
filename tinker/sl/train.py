@@ -31,7 +31,7 @@ MODEL = "Qwen/Qwen3-8B"                    # Base model to fine-tune
 LORA_RANK = 32                              # LoRA rank
 LEARNING_RATE = 6e-4                        # Starting LR (linear decay from this)
 BATCH_SIZE = 128                            # Examples per training batch
-MAX_LENGTH = 8192                           # Max sequence length (prompt + response)
+MAX_LENGTH = 4096                           # Max sequence length (prompt + response)
 N_EPOCHS = 4                                # Number of passes through the data
 SAVE_EVERY = 20                             # Checkpoint every N batches (0 = disabled)
 EVAL_SPLIT = 0.1                            # Fraction of data held out for eval
