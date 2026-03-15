@@ -3,7 +3,7 @@
 ---
 
 ## HEADLINE RESULT
-**90.5% on MATH level 4-5** (competition math) with ZERO scaffolding — no system prompt, no few-shot, no CoT instructions. Reasoning (`<think>` blocks, self-correction, `\boxed{}` format) emerged purely from binary reward signal. 2% unsolved rate on eval set.
+**91.25% on MATH level 4-5** (competition math) with ZERO scaffolding — no system prompt, no few-shot, no CoT instructions. Reasoning (`<think>` blocks, self-correction, `\boxed{}` format) emerged purely from binary reward signal. 2% unsolved rate on eval set.
 
 ## WHAT WORKED (ranked by impact)
 
@@ -37,10 +37,14 @@
 | 18 | e237 | N_BATCHES 50 | 0.8281 | KEEP |
 | 20 | e265 | MAX_TOKENS 2048 | 0.8806 | KEEP |
 | 21 | e288 | GROUP_SIZE 16 | 0.8850 | KEEP |
-| **22** | **e304** | **MAX_TOKENS 4096** | **0.9050** | **BEST** |
+| 22 | e304 | MAX_TOKENS 4096 | 0.9050 | KEEP |
+| **23** | **e348** | **N_BATCHES 75** | **0.9125** | **BEST** |
 
 ## CURRENT BEST CONFIG
-Model: Qwen/Qwen3-8B, PPO, LR=4e-5, **MAX_TOKENS=4096**, GROUP_SIZE=8, BATCH_SIZE=128, N_BATCHES=50, LoRA rank=32. Pure binary reward, zero scaffolding.
+Model: Qwen/Qwen3-8B, PPO, LR=4e-5, **MAX_TOKENS=4096**, GROUP_SIZE=8, BATCH_SIZE=128, **N_BATCHES=75**, LoRA rank=32. Pure binary reward, zero scaffolding.
+
+Checkpoint: `tinker://87ca80ba-3095-5c38-a27a-5c41abdfff6c:train:0/weights/final`
+Sampler: `tinker://87ca80ba-3095-5c38-a27a-5c41abdfff6c:train:0/sampler_weights/final`
 
 ## LOSS FUNCTION RANKING
 1. **PPO** — fast, stable, best
