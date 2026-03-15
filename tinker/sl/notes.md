@@ -237,7 +237,7 @@ The optimal config walks a razor's edge: rough enough for diversity, smooth enou
 ## Experiment Count
 - **Session 1**: 67 experiments (e192-e322), established 90% MV ceiling
 - **Session 2**: 19 experiments (e364-e408), pushed to 94% MV via LR=6e-4, launched SFT→RL
-- **Total**: 86 experiments (85 SFT + 1 SFT→RL)
+- **Total**: 88 experiments (85 SFT + 3 SFT→RL)
 
 ## ANSWERED: SFT → RL Sequential Training
 **Marginal improvement only.** SFT model already too strong for standard RL problems.
@@ -248,6 +248,8 @@ The optimal config walks a razor's edge: rough enough for diversity, smooth enou
 - But >85% skip rate — model already solves most RL training problems
 - Train rewards high (0.90-0.94) but don't transfer to eval
 - **Key insight**: SFT→RL needs HARDER RL problems (AIME, competition math)
+- LR=2e-5 variant: even worse (rewards 0.74-0.83), 96-98% skip rate = no GRPO signal
+- The SFT model solves ~97% of MATH L2-5 problems → no within-group variance for GRPO
 
 ## Open Questions
 1. ~~Would SFT → RL sequential training exceed both alone?~~ **YES — 93% at temp=1.0!**

@@ -36,7 +36,7 @@ from reward import compute_reward
 # ============================================================================
 MODEL = "Qwen/Qwen3-8B"                    # Base model to fine-tune
 LORA_RANK = 32                              # LoRA rank (32 = cookbook default)
-LEARNING_RATE = 2e-5                        # Lower LR for SFT→RL refinement
+LEARNING_RATE = 4e-5                        # Optimal LR (2e-5 too slow, 6e-5 too fast)
 BATCH_SIZE = 128                            # Prompts per training batch (>= 128, see rules.md)
 GROUP_SIZE = 4                              # Reduced to keep compute neutral with 8192-token sequences
 MAX_TOKENS = 8192                           # Even longer chains for hardest competition math
@@ -47,7 +47,7 @@ LOSS_FN = "ppo"                             # PPO: proven best (DRO catastrophic
 
 # Resume from a saved checkpoint (set to None to start fresh)
 # Use a tinker:// path from a previous run's save_state() output
-RESUME_FROM = "tinker://e5cbbbca-0995-59ef-87ef-7e28e22d6bc4:train:0/weights/final"  # SFT checkpoint
+RESUME_FROM = None                          # e.g. "tinker://session:train:0/weights/final"
 
 # Few-shot examples prepended to every prompt (set to [] for zero-shot)
 # EXPERIMENT: Zero scaffolding — no few-shot, no system prompt, no CoT instructions.
