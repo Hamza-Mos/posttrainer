@@ -47,7 +47,7 @@ TASK_LM = "openai/gpt-4.1-mini"
 EVALUATOR_LM = "openai/gpt-4.1-mini"
 REFLECTION_LM = "anthropic/claude-sonnet-4-6"
 
-MAX_METRIC_CALLS = 30
+MAX_METRIC_CALLS = 50
 
 SEED = {
     "system_prompt": (
@@ -73,25 +73,34 @@ SEED = {
 def _d(q, a):
     return {"input": q, "answer": a, "additional_context": {}}
 
+# Competition-level math: AMC/AIME difficulty, multi-step reasoning, combinatorics
 TRAINSET = [
-    _d("A store sells apples for $2 each and oranges for $3 each. If you buy 5 apples and 4 oranges, how much do you spend in total?", "22"),
-    _d("What is the next number in the sequence: 2, 6, 18, 54, ...?", "162"),
-    _d("A train travels at 60 mph for 2.5 hours. How many miles does it travel?", "150"),
-    _d("If the area of a circle is 49π square meters, what is its radius in meters?", "7"),
-    _d("Three friends split a bill of $87 equally. How much does each person pay?", "29"),
-    _d("What is 15% of 240?", "36"),
-    _d("A rectangle has a perimeter of 30 cm and a width of 5 cm. What is its length in cm?", "10"),
-    _d("If 3x + 7 = 28, what is x?", "7"),
-    _d("How many prime numbers are there between 20 and 40?", "4"),
-    _d("A bag contains 5 red balls and 3 blue balls. What fraction of the balls are red?", "5/8"),
+    _d("How many integers between 1 and 1000 (inclusive) are divisible by both 3 and 7 but not by 5?", "38"),
+    _d("A 5-digit number is formed using the digits 1, 2, 3, 4, 5 without repetition. What is the probability that the number is odd? Express as a fraction.", "3/5"),
+    _d("In how many ways can 8 people be seated around a circular table?", "5040"),
+    _d("Find the remainder when 2^100 is divided by 7.", "2"),
+    _d("A box contains 6 red, 4 blue, and 5 green marbles. If 3 marbles are drawn without replacement, what is the probability that all 3 are the same color? Express as a fraction.", "34/455"),
+    _d("The sum of the first n positive integers is 325. What is n?", "25"),
+    _d("If log base 2 of x plus log base 2 of (x-2) equals 3, what is x?", "4"),
+    _d("A triangle has sides of length 5, 12, and 13. What is its area?", "30"),
+    _d("How many 4-letter codes can be formed using the letters A, B, C, D, E if repetition is allowed and the code must start with a vowel?", "250"),
+    _d("Find the value of the infinite series: 1/2 + 1/4 + 1/8 + 1/16 + ... Express as a whole number or fraction.", "1"),
+    _d("A fair coin is flipped 6 times. What is the probability of getting exactly 3 heads? Express as a fraction.", "5/16"),
+    _d("What is the greatest common divisor of 252 and 198?", "18"),
+    _d("In a class of 40 students, 25 play soccer, 20 play basketball, and 5 play neither. How many students play both sports?", "10"),
+    _d("If f(x) = 3x^2 - 2x + 1, what is f(f(1))?", "7"),
+    _d("A ladder 10 meters long leans against a wall. The base is 6 meters from the wall. How high up the wall does the ladder reach?", "8"),
 ]
 
 VALSET = [
-    _d("A car gets 30 miles per gallon. How many gallons are needed for a 450-mile trip?", "15"),
-    _d("What is the sum of all integers from 1 to 20?", "210"),
-    _d("A shirt originally costs $80 and is marked down 25%. What is the sale price in dollars?", "60"),
-    _d("Two dice are rolled. What is the probability that the sum is 7? Express as a fraction.", "1/6"),
-    _d("The average of 5 numbers is 12. If four of the numbers are 10, 14, 8, and 16, what is the fifth number?", "12"),
+    _d("How many distinct prime factors does 2310 have?", "5"),
+    _d("If the product of two consecutive positive integers is 306, what is the smaller integer?", "17"),
+    _d("Three cards are drawn from a standard 52-card deck without replacement. What is the probability that all three are aces? Express as a fraction.", "1/5525"),
+    _d("Find the sum of all positive divisors of 28.", "56"),
+    _d("A geometric sequence has first term 3 and common ratio 2. What is the sum of the first 8 terms?", "765"),
+    _d("How many trailing zeros does 25! have?", "6"),
+    _d("Two trains leave stations 300 miles apart heading toward each other. One travels at 50 mph, the other at 70 mph. After how many hours do they meet? Express as a fraction.", "5/2"),
+    _d("What is the number of diagonals in a convex polygon with 12 sides?", "54"),
 ]
 
 # ============================================================
@@ -182,7 +191,7 @@ class CoEvolutionAdapter(GEPAAdapter):
                         {"role": "user", "content": item["input"]},
                     ],
                     temperature=0.7,
-                    max_tokens=512,
+                    max_tokens=1024,
                 )
                 generated = gen_resp.choices[0].message.content
             except Exception as e:
