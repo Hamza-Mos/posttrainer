@@ -38,7 +38,7 @@ litellm.suppress_debug_info = True
 # CONFIGURATION
 # ============================================================
 
-TASK_LM = "openai/gpt-5.4"                    # generates analyses
+TASK_LM = "anthropic/claude-sonnet-4-6"       # generates analyses
 EVALUATOR_LM = "openai/gpt-5.4"              # applies both rubrics
 REFLECTION_LM = "anthropic/claude-opus-4-6"   # proposes improvements
 
@@ -88,18 +88,28 @@ def _d(q):
     return {"input": q, "answer": "", "additional_context": {}}
 
 TRAINSET = [
+    # Systems & distributed
     _d("Explain how database connection pooling works, when to use it, and common pitfalls."),
     _d("What are the tradeoffs between microservices and monolithic architectures? When should you choose each?"),
-    _d("Explain how TLS 1.3 handshake differs from TLS 1.2 and why the changes were made."),
     _d("What is the CAP theorem and how do real-world distributed databases handle it?"),
-    _d("Explain the difference between optimistic and pessimistic concurrency control. Give concrete examples."),
-    _d("How does a B-tree index work in a database? Why is it preferred over a hash index for range queries?"),
-    _d("What are the key differences between REST and GraphQL APIs? When would you choose one over the other?"),
-    _d("Explain how garbage collection works in the JVM, including the different collector types and when to use each."),
-    _d("What is eventual consistency? Give a real-world example where it causes problems and how to mitigate them."),
-    _d("Explain the concept of backpressure in distributed systems and common strategies for handling it."),
     _d("How does consistent hashing work and why is it important for distributed caching?"),
+    _d("Explain the concept of backpressure in distributed systems and common strategies for handling it."),
+    # Security & networking
+    _d("Explain how TLS 1.3 handshake differs from TLS 1.2 and why the changes were made."),
+    _d("What are the key differences between symmetric and asymmetric encryption? When is each used?"),
+    # Databases
+    _d("How does a B-tree index work in a database? Why is it preferred over a hash index for range queries?"),
+    _d("What is eventual consistency? Give a real-world example where it causes problems and how to mitigate them."),
+    _d("Explain the difference between optimistic and pessimistic concurrency control. Give concrete examples."),
+    # APIs & architecture
+    _d("What are the key differences between REST and GraphQL APIs? When would you choose one over the other?"),
     _d("What are the tradeoffs of using event sourcing vs traditional CRUD for application state management?"),
+    # Programming languages & runtimes
+    _d("Explain how garbage collection works in the JVM, including the different collector types and when to use each."),
+    _d("What are Rust's ownership and borrowing rules? How do they prevent memory bugs without a garbage collector?"),
+    # ML/AI
+    _d("Explain the transformer architecture and why it replaced RNNs for most sequence modeling tasks."),
+    _d("What is the difference between fine-tuning and RAG for adapting LLMs to domain-specific knowledge?"),
 ]
 
 VALSET = [
@@ -109,6 +119,8 @@ VALSET = [
     _d("How does write-ahead logging (WAL) work in databases and why is it critical for durability?"),
     _d("What are the tradeoffs between row-oriented and column-oriented databases?"),
     _d("Explain how container networking works in Kubernetes, including the CNI plugin architecture."),
+    _d("What is the difference between threads, processes, and coroutines? When would you use each?"),
+    _d("Explain how RAFT consensus works and why it's preferred over Paxos in modern systems."),
 ]
 
 # ============================================================
@@ -174,7 +186,7 @@ class CoEvolutionAdapter(GEPAAdapter):
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": item["input"]},
                     ],
-                    # gpt-5.4 only supports temperature=1
+                    temperature=0.3,
                     max_tokens=1200,
                 )
                 generated = gen_resp.choices[0].message.content
