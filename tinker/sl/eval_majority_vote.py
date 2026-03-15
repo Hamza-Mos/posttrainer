@@ -59,10 +59,11 @@ def main():
 
     sampler_path = sys.argv[1]
     num_samples = int(sys.argv[2]) if len(sys.argv) > 2 else 5
+    temperature = float(sys.argv[3]) if len(sys.argv) > 3 else TEMPERATURE
     print(f"Model: {MODEL}")
     print(f"Sampler weights: {sampler_path}")
     print(f"Samples per problem: {num_samples}")
-    print(f"Temperature: {TEMPERATURE}")
+    print(f"Temperature: {temperature}")
 
     # Load eval prompts
     eval_prompts = []
@@ -88,7 +89,7 @@ def main():
 
     sampling_params = types.SamplingParams(
         max_tokens=MAX_TOKENS,
-        temperature=TEMPERATURE,
+        temperature=temperature,
         stop=stop_sequences if stop_sequences else None,
     )
 

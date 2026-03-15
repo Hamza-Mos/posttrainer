@@ -177,6 +177,40 @@ Too little: underfitting. Too much: kills output diversity. Sweet spot: ~2500.
 - Self-distillation: amplifies 82% → 90%, doesn't create reasoning from scratch
 - Ablation proved: without Claude seed = 82%, with = 90%
 
+### 18. LR Sweep at MAX_LENGTH=4096 (experiments 68-75)
+| LR | eval_loss | Greedy | MV@5 avg | MV@16 |
+|----|-----------|--------|----------|-------|
+| 4e-4 | 0.096 | 80% | 90% | 92% |
+| 5e-4 | 0.094 | 80% | 90.7% | 94% avg |
+| **6e-4** | **0.096** | **86%** | **93.3%** | **96%** |
+| 7e-4 | 0.097 | 84% | 92% | — |
+
+Higher LR = rougher training = more output diversity for MV. Sweet spot: 6e-4.
+
+### 19. Epoch Sweep at LR=6e-4+4096
+| Epochs | MV@5 avg |
+|--------|----------|
+| 2 | 90% |
+| 3 | 89% |
+| **4** | **93.3%** |
+| 5 | 90% |
+
+Non-monotonic — 4 epochs is genuinely optimal. The slight eval_loss rise in epochs 3-4 is BENEFICIAL.
+
+### 20. Other Findings at 6e-4+4096
+- Batch=64: too noisy (87% MV), batch=128 optimal
+- Rank 64: slightly worse (91%), rank 32 optimal
+- 2548 traces: 88% MV, 3003 optimal (sweet spot shifts with config)
+- 3403 traces: 87% MV, more data STILL kills diversity
+- Temp 0.3-0.5: all in optimal range for LR=6e-4 (flat curve)
+
+## Current Best Configuration
+**LR=6e-4, N_EPOCHS=4, BATCH_SIZE=128, MAX_LENGTH=4096, LORA_RANK=32, 3003 traces**
+- MV@5 avg: 93.3% (runs: 92%, 94%, 94%)
+- MV@16: 96% (consistent)
+- Greedy: 86%
+- Any correct @16: 96-98% (48-49/50, only geometry unsolvable)
+
 ## Open Questions
 1. Would SFT → RL sequential training exceed both alone?
 2. Does a larger base model (e.g. 14B) respond better to SFT distillation?
