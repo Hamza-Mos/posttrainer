@@ -47,7 +47,7 @@ LOSS_FN = "ppo"                             # PPO: proven best (DRO catastrophic
 
 # Resume from a saved checkpoint (set to None to start fresh)
 # Use a tinker:// path from a previous run's save_state() output
-RESUME_FROM = None                          # e.g. "tinker://session:train:0/weights/final"
+RESUME_FROM = "tinker://77d8aca0-d0b2-56ef-977e-e184778272f9:train:0/weights/final"  # SFT checkpoint
 
 # Few-shot examples prepended to every prompt (set to [] for zero-shot)
 # EXPERIMENT: Zero scaffolding — no few-shot, no system prompt, no CoT instructions.
