@@ -38,7 +38,7 @@ litellm.suppress_debug_info = True
 # CONFIGURATION
 # ============================================================
 
-TASK_LM = "anthropic/claude-sonnet-4-6"       # generates analyses
+TASK_LM = "openai/gpt-5.4"                    # generates analyses
 EVALUATOR_LM = "openai/gpt-5.4"              # applies both rubrics
 REFLECTION_LM = "anthropic/claude-opus-4-6"   # proposes improvements
 
@@ -174,7 +174,7 @@ class CoEvolutionAdapter(GEPAAdapter):
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": item["input"]},
                     ],
-                    temperature=0.3,
+                    # gpt-5.4 only supports temperature=1
                     max_tokens=1200,
                 )
                 generated = gen_resp.choices[0].message.content
